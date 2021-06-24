@@ -73,37 +73,37 @@ defmodule Typo.Strings do
     end
   end
 
-  def literal_apply(<<>>, prefix), do: prefix
+  defp literal_apply(<<>>, prefix), do: prefix
 
-  def literal_apply(<<?\\::8, rest::binary>>, prefix),
+  defp literal_apply(<<?\\::8, rest::binary>>, prefix),
     do: <<prefix::binary, ?\\::8, ?\\::8, literal_apply(rest, prefix)::binary>>
 
-  def literal_apply(<<?(::8, rest::binary>>, prefix),
+  defp literal_apply(<<?(::8, rest::binary>>, prefix),
     do: <<prefix::binary, ?\\::8, ?(::8, literal_apply(rest, prefix)::binary>>
 
-  def literal_apply(<<?)::8, rest::binary>>, prefix),
+  defp literal_apply(<<?)::8, rest::binary>>, prefix),
     do: <<prefix::binary, ?\\::8, ?)::8, literal_apply(rest, prefix)::binary>>
 
-  def literal_apply(<<8::8, rest::binary>>, prefix),
+  defp literal_apply(<<8::8, rest::binary>>, prefix),
     do: <<prefix::binary, ?\\::8, ?b::8, literal_apply(rest, prefix)::binary>>
 
-  def literal_apply(<<9::8, rest::binary>>, prefix),
+  defp literal_apply(<<9::8, rest::binary>>, prefix),
     do: <<prefix::binary, ?\\::8, ?t::8, literal_apply(rest, prefix)::binary>>
 
-  def literal_apply(<<10::8, rest::binary>>, prefix),
+  defp literal_apply(<<10::8, rest::binary>>, prefix),
     do: <<prefix::binary, ?\\::8, ?n::8, literal_apply(rest, prefix)::binary>>
 
-  def literal_apply(<<12::8, rest::binary>>, prefix),
+  defp literal_apply(<<12::8, rest::binary>>, prefix),
     do: <<prefix::binary, ?\\::8, ?f::8, literal_apply(rest, prefix)::binary>>
 
-  def literal_apply(<<13::8, rest::binary>>, prefix),
+  defp literal_apply(<<13::8, rest::binary>>, prefix),
     do: <<prefix::binary, ?\\::8, ?r::8, literal_apply(rest, prefix)::binary>>
 
-  def literal_apply(<<ch::8, rest::binary>>, prefix) when ch < 32 or ch > 126 do
+  defp literal_apply(<<ch::8, rest::binary>>, prefix) when ch < 32 or ch > 126 do
     <<prefix::binary, ?\\::8, octal(ch)::binary, literal_apply(rest, prefix)::binary>>
   end
 
-  def literal_apply(<<ch::8, rest::binary>>, prefix),
+  defp literal_apply(<<ch::8, rest::binary>>, prefix),
     do: <<prefix::binary, ch::8, literal_apply(rest, prefix)::binary>>
 
   @doc """
