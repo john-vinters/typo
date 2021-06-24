@@ -131,7 +131,7 @@ defmodule Typo.Strings do
   `options`:
     * `:bracket` - if `true` (default), encloses result in angle brackets.
   """
-  @spec utf16be_hex(String.t(), Keyword.t()) :: nonempty_binary()
+  @spec utf16be_hex(binary(), Keyword.t()) :: <<_::16, _::_*8>>
   def utf16be_hex(<<this::binary>>, options \\ []) when is_list(options) do
     converted =
       this
