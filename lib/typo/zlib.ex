@@ -15,9 +15,7 @@
 #
 
 defmodule Typo.Zlib do
-  @moduledoc """
-  Zlib compression and decompression.
-  """
+  @moduledoc false
 
   @doc """
   Compresses the given binary `this` at compression `level`, where `0` is no
