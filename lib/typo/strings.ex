@@ -48,8 +48,8 @@ defmodule Typo.Strings do
 
   def name(<<ch::8, rest::binary>>, prefix) do
     new_prefix =
-      if ch == 35 or ch < 33 or ch > 127 or is_delimiter(ch) do
-        <<prefix::binary, hex(ch)::binary>>
+      if ch == ?# or ch < 33 or ch > 127 or is_delimiter(ch) do
+        <<prefix::binary, ?#::8, hex(ch)::binary>>
       else
         <<prefix::binary, ch::8>>
       end
