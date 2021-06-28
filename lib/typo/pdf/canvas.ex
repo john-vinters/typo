@@ -1,0 +1,189 @@
+#
+# (c) Copyright 2021 John Vinters <john.vinters@gmail.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+defmodule Typo.PDF.Canvas do
+  @moduledoc """
+  PDF drawing functions.
+  """
+
+  import Typo.Utils.Guards
+  import Typo.Utils.Strings, only: [n2s: 1]
+
+  # appends data directly onto the current PDF page stream.
+  # should NOT be used unless you know exactly what you are doing!
+  @doc false
+  @spec append(Typo.handle(), binary()) :: :ok
+  def append(pdf, data) when is_handle(pdf) and is_binary(data),
+    do: GenServer.cast(pdf, {:raw_append, data})
+
+  @doc """
+  Closes the current path by appending a straight line from the current
+  graphics position to the path start position.
+  """
+  @spec close_path(Typo.handle()) :: :ok
+  def close_path(pdf) when is_handle(pdf), do: append(pdf, "h")
+
+  @doc """
+  Ends the current path without filling or stroking.
+  """
+  @spec end_path(Typo.handle()) :: :ok
+  def end_path(pdf) when is_handle(pdf), do: append(pdf, "n")
+
+  @doc """
+  Fills the current path using the optional `winding` rule:
+    * `:non_zero` - non-zero winding rule (default).
+    * `:even_odd` - even-odd winding rule.
+  """
+  @spec fill(Typo.handle(), Typo.winding_rule()) :: :ok
+  def fill(pdf, :non_zero) when is_handle(pdf), do: append(pdf, "f")
+  def fill(pdf, :even_odd) when is_handle(pdf), do: append(pdf, "f*")
+
+  @doc """
+  Fills the current path using the optional `winding` rule:
+    * `:non_zero` - non-zero winding rule (default).
+    * `:even_odd` - even-odd winding rule.
+
+  Once filled, the path is then stroked.
+  """
+  @spec fill_stroke(Typo.handle(), Typo.winding_rule()) :: :ok
+  def fill_stroke(pdf, :non_zero) when is_handle(pdf), do: append(pdf, "b")
+  def fill_stroke(pdf, :even_odd) when is_handle(pdf), do: append(pdf, "b*")
+
+  @doc """
+  Appends a line segment onto the current path from the current graphics
+  position to point `p`.
+  """
+  @spec line_to(Typo.handle(), Typo.xy()) :: :ok
+  def line_to(pdf, {x, y} = _p) when is_handle(pdf) and is_number(x) and is_number(y),
+    do: append(pdf, n2s([x, y, "l"]))
+
+  @doc """
+  Appends a joined set of line segments onto the current path.
+  """
+  @spec lines(Typo.handle(), [Typo.xy()]) :: :ok
+  def lines(pdf, coords) when is_handle(pdf) and is_list(coords) do
+    op = lines_acc(coords, "")
+    append(pdf, op)
+  end
+
+  defp lines_acc([], result), do: result
+
+  defp lines_acc([{x, y} | t], result) do
+    lines_acc(t, <<result::binary, n2s([x, y, "m "])::binary>>)
+  end
+
+  @doc """
+  Moves the current graphics position to `p`, which also begins a new subpath.
+  """
+  @spec move_to(Typo.handle(), Typo.xy()) :: :ok
+  def move_to(pdf, {x, y} = _p) when is_handle(pdf) and is_number(x) and is_number(y),
+    do: append(pdf, n2s([x, y, "m"]))
+
+  @doc """
+  Draws a rectangle with lower left corner `p`, with dimensions `width` by
+  `height`.
+  """
+  @spec rectangle(Typo.handle(), Typo.xy(), number(), number()) :: :ok
+  def rectangle(pdf, {x, y} = _p, width, height)
+      when is_handle(pdf) and is_number(x) and is_number(y) and is_number(width) and
+             is_number(height),
+      do: append(pdf, n2s([x, y, width, height, "re"]))
+
+  @doc """
+  Sets line dash style.  The pattern is on for `on` points, off for `off` points,
+  and (optionally) `phase` can adjust the phase of the output pattern.
+  """
+  @spec set_line_dash(Typo.handle(), number(), number(), number()) :: :ok
+  def set_line_dash(pdf, on, off, phase \\ 0)
+      when is_handle(pdf) and is_number(on) and is_number(off) and is_number(phase),
+      do: append(pdf, n2s(["[", on, off, "]", phase, "d"]))
+
+  @doc """
+  Sets line cap (end) style to one of:
+    * `:cap_butt` - line stroke is squared off at the line-segment endpoints.
+    * `:cap_round` - filled semicircular arc with half line width diameter is
+      drawn around line-segment endpoints.
+    * `:cap_square` - stroke continues half line width past endpoints and is
+      squared off.
+  """
+  @spec set_line_cap(Typo.handle(), Typo.line_cap()) :: :ok
+  def set_line_cap(pdf, :cap_butt) when is_handle(pdf), do: append(pdf, n2s([0, "J"]))
+  def set_line_cap(pdf, :cap_round) when is_handle(pdf), do: append(pdf, n2s([1, "J"]))
+  def set_line_cap(pdf, :cap_square) when is_handle(pdf), do: append(pdf, n2s([2, "J"]))
+
+  @doc """
+  Sets line join style to one of:
+    * `:join_bevel` - the two line segments are squared-off at the join points
+      and the resulting notch between the two ends is filled with a triangle.
+    * `:join_mitre` - the outer edges of the stroke are extended until they meet
+      at an angle (may alternatively be specified as `:join_miter`).
+    * `:join_round` - a filled arc of a circle with diameter equal to the line
+      width is drawn around the point where the two line segments meet connecting
+      the outer edges of the strokes, producing a rounded join.
+  """
+  @spec set_line_join(Typo.handle(), Typo.line_join()) :: :ok
+  def set_line_join(pdf, :join_bevel) when is_handle(pdf), do: append(pdf, "2 j")
+  def set_line_join(pdf, :join_mitre) when is_handle(pdf), do: append(pdf, "0 j")
+  def set_line_join(pdf, :join_miter) when is_handle(pdf), do: append(pdf, "0 j")
+  def set_line_join(pdf, :join_round) when is_handle(pdf), do: append(pdf, "1 j")
+
+  @doc """
+  Sets line style to solid (instead of dashed).
+  """
+  @spec set_line_solid(Typo.handle()) :: :ok
+  def set_line_solid(pdf) when is_handle(pdf), do: append(pdf, "[] 0 d")
+
+  @doc """
+  Sets line width to `width` points.
+  """
+  @spec set_line_width(Typo.handle(), number()) :: :ok
+  def set_line_width(pdf, width) when is_handle(pdf) and is_number(width) and width >= 0,
+    do: append(pdf, n2s([width, "w"]))
+
+  @doc """
+  Sets the mitre limit, which controls the point at which mitred joins are turned
+  into bevels.
+  """
+  @spec set_miter_limit(Typo.handle(), number()) :: :ok
+  defdelegate set_miter_limit(pdf, limit), to: Typo.PDF.Canvas, as: :set_mitre_limit
+
+  @doc """
+  Sets the mitre limit, which controls the point at which mitred joins are turned
+  into bevels.
+  """
+  @spec set_mitre_limit(Typo.handle(), number()) :: :ok
+  def set_mitre_limit(pdf, limit) when is_handle(pdf) and is_number(limit),
+    do: append(pdf, n2s([limit, "M"]))
+
+  @doc """
+  Strokes the current path, with optional `close` value:
+    * `:close` - path is closed before stroking (default).
+    * `:no_close` - path is stroked without closing.
+  """
+  @spec stroke(Typo.handle(), :close | :no_close) :: :ok
+  def stroke(pdf, close \\ :close)
+  def stroke(pdf, :close) when is_handle(pdf), do: append(pdf, "s")
+  def stroke(pdf, :no_close) when is_handle(pdf), do: append(pdf, "S")
+
+  @doc """
+  Appends a triangle with corners `p1`, `p2` and `p3` onto the current path.
+  """
+  @spec triangle(Typo.handle(), Typo.xy(), Typo.xy(), Typo.xy()) :: :ok
+  def triangle(pdf, {x1, y1} = _p1, {x2, y2} = _p2, {x3, y3} = _p3)
+      when is_handle(pdf) and is_number(x1) and is_number(y1) and is_number(x2) and is_number(y2) and
+             is_number(x3) and is_number(y3),
+      do: append(pdf, n2s([x1, y1, "m", x2, y2, "l", x3, y3, "l", x1, y1, "l"]))
+end

@@ -53,6 +53,32 @@ defmodule Typo.PDF.Server do
             stream: <<>>,
             text_state: %{}
 
+  # appends the given block of data onto the current page stream, adding a space
+  # separator if required.
+  defp append(%Server{} = state, data) when is_binary(data) do
+    new_stream =
+      case ends_with_crlfsp?(state.stream) do
+        true -> state.stream <> data
+        false -> <<state.stream::binary, 32::8, data::binary>>
+      end
+
+    %Server{state | stream: new_stream}
+  end
+
+  # returns true if the given binary ends with CR, LF or Space.
+  # NOTE: also returns true if the binary is zero length.
+  @spec ends_with_crlfsp?(binary()) :: boolean()
+  def ends_with_crlfsp?(<<>>), do: true
+
+  def ends_with_crlfsp?(<<data::binary>>) do
+    case :binary.last(data) do
+      10 -> true
+      13 -> true
+      32 -> true
+      _ -> false
+    end
+  end
+
   # returns the current server state (for debugging).
   @spec handle_call(:get_state, any(), Server.t()) :: {:reply, Server.t(), Server.t(), timeout()}
   def handle_call(:get_state, _from, %Server{} = state) do
@@ -64,6 +90,13 @@ defmodule Typo.PDF.Server do
   @spec handle_call(:stop, any(), Server.t()) :: {:stop, :normal, :ok, Server.t()}
   def handle_call(:stop, _from, %Server{} = state) do
     {:stop, :normal, :ok, state}
+  end
+
+  # appends binary to page stream.
+  @spec handle_cast({:raw_append, binary()}, Server.t()) :: {:noreply, Server.t(), timeout()}
+  def handle_cast({:raw_append, data}, %Server{} = state) do
+    new_state = inc_req(append(state, data))
+    {:noreply, new_state, new_state.idle_timeout}
   end
 
   # handles idle timeouts (hibernates the server).
