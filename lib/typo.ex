@@ -19,4 +19,24 @@ defmodule Typo do
   Typo is an Elixir library which is designed to generate PDF documents
   programatically.
   """
+
+  # type definitions to help with dialyzer use
+  @type compression :: 0..9
+  @type colour :: colour_greyscale() | colour_rgb() | colour_cmyk()
+  @type colour_cmyk :: {number(), number(), number(), number()}
+  @type colour_greyscale :: number()
+  @type colour_rgb :: {number(), number(), number()}
+  @type error :: {:error, any()}
+  @type font_id :: atom() | binary() | integer()
+  @type image_id :: atom() | binary() | integer()
+  @type page_orientation :: :portrait | :landscape | :default
+  @type rectangle :: {number(), number(), number(), number()}
+  @type winding_rule :: :non_zero | :even_odd
+  @type xy :: {number(), number()}
+
+  @doc """
+  Returns the library version.
+  """
+  @spec version :: String.t()
+  def version, do: Application.spec(:typo, :vsn) |> to_string()
 end
