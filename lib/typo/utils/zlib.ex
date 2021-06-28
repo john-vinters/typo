@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-defmodule Typo.Zlib do
+defmodule Typo.Utils.Zlib do
   @moduledoc false
 
   @doc """

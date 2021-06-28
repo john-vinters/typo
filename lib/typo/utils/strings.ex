@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-defmodule Typo.Strings do
+defmodule Typo.Utils.Strings do
   @moduledoc false
 
   @doc """

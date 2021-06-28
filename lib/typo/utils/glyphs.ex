@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-defmodule Typo.Glyphs do
+defmodule Typo.Utils.Glyphs do
   @moduledoc false
 
   {:ok, {forward, reverse}} =
