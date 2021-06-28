@@ -40,24 +40,6 @@ defmodule Typo.Strings do
   def is_delimiter(_), do: false
 
   @doc """
-  Safely formats the given PDF `name`.  Applies `prefix`, which is NOT
-  escaped, and is by default `"/"`.
-  """
-  def name(this, prefix \\ "/")
-  def name(<<>>, prefix), do: prefix
-
-  def name(<<ch::8, rest::binary>>, prefix) do
-    new_prefix =
-      if ch == ?# or ch < 33 or ch > 127 or is_delimiter(ch) do
-        <<prefix::binary, ?#::8, hex(ch)::binary>>
-      else
-        <<prefix::binary, ch::8>>
-      end
-
-    name(rest, new_prefix)
-  end
-
-  @doc """
   Encodes a string literal `this` for inclusion in PDF file.
 
   `options`:
@@ -117,6 +99,25 @@ defmodule Typo.Strings do
   def n2s(s) when is_binary(s), do: s
   def n2s([h | []]), do: n2s(h)
   def n2s([h | t]), do: space(n2s(h), n2s(t))
+
+  @doc """
+  Safely formats the given PDF `name`.  Applies `prefix`, which is NOT
+  escaped, and is by default `"/"`.
+  """
+  @spec name(binary(), binary()) :: binary()
+  def name(this, prefix \\ "/")
+  def name(<<>>, prefix), do: prefix
+
+  def name(<<ch::8, rest::binary>>, prefix) do
+    new_prefix =
+      if ch == ?# or ch < 33 or ch > 127 or is_delimiter(ch) do
+        <<prefix::binary, ?#::8, hex(ch)::binary>>
+      else
+        <<prefix::binary, ch::8>>
+      end
+
+    name(rest, new_prefix)
+  end
 
   @doc """
   Converts the given value to three octal digits.
