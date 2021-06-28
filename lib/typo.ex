@@ -28,6 +28,7 @@ defmodule Typo do
   @type colour_rgb :: {number(), number(), number()}
   @type error :: {:error, any()}
   @type font_id :: atom() | binary() | integer()
+  @type handle :: pid()
   @type image_id :: atom() | binary() | integer()
   @type page_orientation :: :portrait | :landscape | :default
   @type rectangle :: {number(), number(), number(), number()}
