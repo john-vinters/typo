@@ -107,6 +107,18 @@ defmodule Typo.Strings do
     do: <<prefix::binary, ch::8, literal_apply(rest, prefix)::binary>>
 
   @doc """
+  Converts a list (or individual) floats/integers/binaries to a space separated
+  binary string.  Floats are formatted to 3 decimal places.
+  """
+  @spec n2s(number() | binary() | [number()] | [binary()]) :: binary()
+  def n2s([]), do: <<>>
+  def n2s(f) when is_float(f), do: :erlang.float_to_binary(f, decimals: 3)
+  def n2s(i) when is_integer(i), do: Integer.to_string(i)
+  def n2s(s) when is_binary(s), do: s
+  def n2s([h | []]), do: n2s(h)
+  def n2s([h | t]), do: space(n2s(h), n2s(t))
+
+  @doc """
   Converts the given value to three octal digits.
   """
   @spec octal(0..255) :: <<_::24>>
