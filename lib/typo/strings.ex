@@ -114,6 +114,19 @@ defmodule Typo.Strings do
     do: zero_pad(Integer.to_string(this, 8), 3)
 
   @doc """
+  Concatenates two strings together, inserting space between if the first
+  string isn't empty and doesn't end in a space.
+  """
+  @spec space(binary(), binary()) :: binary()
+  def space(this, that) when is_binary(this) and is_binary(that) do
+    cond do
+      this == "" -> that
+      :binary.last(this) == 32 -> this <> that
+      true -> this <> " " <> that
+    end
+  end
+
+  @doc """
   Converts UTF-8 string to UTF-16BE with BOM.
   """
   @spec utf16be(String.t()) :: binary()
