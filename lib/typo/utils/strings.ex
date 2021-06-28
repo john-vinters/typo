@@ -134,6 +134,7 @@ defmodule Typo.Utils.Strings do
   def space(this, that) when is_binary(this) and is_binary(that) do
     cond do
       this == "" -> that
+      that == "" -> this
       :binary.last(this) == 32 -> this <> that
       true -> this <> " " <> that
     end
