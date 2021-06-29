@@ -22,6 +22,8 @@ defmodule Typo.PDF.Canvas do
   import Typo.Utils.Guards
   import Typo.Utils.Strings, only: [n2s: 1]
 
+  @k 4.0 * ((:math.sqrt(2) - 1.0) / 3.0)
+
   # appends data directly onto the current PDF page stream.
   # should NOT be used unless you know exactly what you are doing!
   @doc false
@@ -30,11 +32,57 @@ defmodule Typo.PDF.Canvas do
     do: GenServer.cast(pdf, {:raw_append, data})
 
   @doc """
+  Moves to `p1` and appends a Bézier curve onto the current path.
+  Uses `p2`, `p3` and `p4` as the control points.
+  """
+  @spec bezier(Typo.handle(), Typo.xy(), Typo.xy(), Typo.xy(), Typo.xy()) :: :ok
+  def bezier(pdf, {x1, y1} = _p1, {x2, y2} = _p2, {x3, y3} = _p3, {x4, y4} = _p4)
+      when is_handle(pdf) and
+             is_number(x1) and is_number(x2) and is_number(x3) and is_number(x4) and
+             is_number(y1) and is_number(y2) and is_number(y3) and is_number(y4) do
+    append(pdf, n2s([x1, y1, "m", x2, y2, x3, y3, x4, y4, "c"]))
+  end
+
+  @doc """
+  Appends a Bézier curve from the current graphics position onto the current path.
+  Uses `p1`, `p2`, `p3` as the control points.
+  """
+  @spec bezier_to(Typo.handle(), Typo.xy(), Typo.xy(), Typo.xy()) :: :ok
+  def bezier_to(pdf, {x1, y1} = _p1, {x2, y2} = _p2, {x3, y3} = _p3)
+      when is_handle(pdf) and
+             is_number(x1) and is_number(x2) and is_number(x3) and
+             is_number(y1) and is_number(y2) and is_number(y3) do
+    append(pdf, n2s([x1, y1, x2, y2, x3, y3, "c"]))
+  end
+
+  @doc """
+  Appends a circle centred on `p` with radius `r` onto the current path.
+  """
+  @spec circle(Typo.handle(), Typo.xy(), number()) :: :ok
+  def circle(pdf, {x, y} = p, r)
+      when is_handle(pdf) and is_number(x) and is_number(y) and is_number(r),
+      do: ellipse(pdf, p, r, r)
+
+  @doc """
   Closes the current path by appending a straight line from the current
   graphics position to the path start position.
   """
   @spec close_path(Typo.handle()) :: :ok
   def close_path(pdf) when is_handle(pdf), do: append(pdf, "h")
+
+  @doc """
+  Appends an Ellipse centred on `p` with x radius `rx` and y radius `ry` onto
+  the current path.
+  """
+  @spec ellipse(Typo.handle(), Typo.xy(), number(), number()) :: :ok
+  def ellipse(pdf, {x, y}, rx, ry)
+      when is_handle(pdf) and is_number(x) and is_number(y) and is_number(rx) and is_number(ry) do
+    :ok = move_to(pdf, {x + rx, y})
+    :ok = bezier_to(pdf, {x + rx, y + ry * @k}, {x + rx * @k, y + ry}, {x, y + ry})
+    :ok = bezier_to(pdf, {x - rx * @k, y + ry}, {x - rx, y + ry * @k}, {x - rx, y})
+    :ok = bezier_to(pdf, {x - rx, y - ry * @k}, {x - rx * @k, y - ry}, {x, y - ry})
+    :ok = bezier_to(pdf, {x + rx * @k, y - ry}, {x + rx, y - ry * @k}, {x + rx, y})
+  end
 
   @doc """
   Ends the current path without filling or stroking.
