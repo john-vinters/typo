@@ -32,6 +32,7 @@ defmodule Typo do
   @type image_id :: atom() | binary() | integer()
   @type line_cap :: :cap_butt | :cap_round | :cap_square
   @type line_join :: :join_bevel | :join_mitre | :join_miter | :join_round
+  @type op_fun :: (() -> :ok | Typo.error())
   @type page_orientation :: :portrait | :landscape | :default
   @type rectangle :: {number(), number(), number(), number()}
   @type winding_rule :: :non_zero | :even_odd

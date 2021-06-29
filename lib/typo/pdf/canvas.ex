@@ -151,6 +151,24 @@ defmodule Typo.PDF.Canvas do
       do: append(pdf, n2s([x, y, width, height, "re"]))
 
   @doc """
+  Restores graphics state by popping from stack.  The state MUST have been
+  previously saved by a matching `save_state/1`.  Does NOT work across page
+  boundaries.
+  Returns `:ok` if successful, `{:error, :stack_underflow}` if you haven't
+  made a previous call to `save_state/1`.
+  """
+  @spec restore_state(Typo.handle()) :: :ok | Typo.error()
+  def restore_state(pdf) when is_handle(pdf), do: GenServer.call(pdf, :restore_graphics_state)
+
+  @doc """
+  Saves the current graphics state by pushing onto stack.  The state can be
+  restored by a later matching `restore_state/1`.  Does NOT work across page
+  boundaries.
+  """
+  @spec save_state(Typo.handle()) :: :ok
+  def save_state(pdf) when is_handle(pdf), do: GenServer.cast(pdf, :save_graphics_state)
+
+  @doc """
   Sets line dash style.  The pattern is on for `on` points, off for `off` points,
   and (optionally) `phase` can adjust the phase of the output pattern.
   """
@@ -234,4 +252,17 @@ defmodule Typo.PDF.Canvas do
       when is_handle(pdf) and is_number(x1) and is_number(y1) and is_number(x2) and is_number(y2) and
              is_number(x3) and is_number(y3),
       do: append(pdf, n2s([x1, y1, "m", x2, y2, "l", x3, y3, "l", x1, y1, "l"]))
+
+  @doc """
+  Saves the current graphics state, runs the specified function and then
+  restores the graphics state.  Returns the value returned by the specified
+  function (which should normally be `:ok` if successful) unless the call
+  to `restore_state/1` fails, in which case it is given priority.
+  """
+  @spec with_state(Typo.handle(), Typo.op_fun()) :: :ok | Typo.error()
+  def with_state(pdf, fun) when is_handle(pdf) and is_function(fun) do
+    :ok = save_state(pdf)
+    r = fun.()
+    with :ok <- restore_state(pdf), do: r
+  end
 end

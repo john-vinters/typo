@@ -34,6 +34,7 @@ defmodule Typo.PDF.Server do
           pdf_version: String.t(),
           requests: non_neg_integer(),
           started: nil | :calendar.datetime(),
+          state_stack: [map()],
           stream: binary(),
           text_state: map()
         }
@@ -50,6 +51,7 @@ defmodule Typo.PDF.Server do
             pdf_version: "1.7",
             requests: 0,
             started: nil,
+            state_stack: [],
             stream: <<>>,
             text_state: %{}
 
@@ -86,6 +88,25 @@ defmodule Typo.PDF.Server do
     {:reply, new_state, new_state, new_state.idle_timeout}
   end
 
+  # restores graphics state.
+  @spec handle_call(:restore_graphics_state, any(), Server.t()) ::
+          {:reply, :ok | Typo.error(), Server.t(), timeout()}
+  def handle_call(:restore_graphics_state, _from, %Server{} = state) do
+    new_state = inc_req(state)
+
+    case new_state.state_stack do
+      [] ->
+        {:reply, {:error, :stack_underflow}, new_state, new_state.idle_timeout}
+
+      [h | t] when is_map(h) ->
+        new_state =
+          %Server{new_state | state_stack: t, text_state: h}
+          |> append("Q")
+
+        {:reply, :ok, new_state, new_state.idle_timeout}
+    end
+  end
+
   # stops the server.
   @spec handle_call(:stop, any(), Server.t()) :: {:stop, :normal, :ok, Server.t()}
   def handle_call(:stop, _from, %Server{} = state) do
@@ -96,6 +117,17 @@ defmodule Typo.PDF.Server do
   @spec handle_cast({:raw_append, binary()}, Server.t()) :: {:noreply, Server.t(), timeout()}
   def handle_cast({:raw_append, data}, %Server{} = state) do
     new_state = inc_req(append(state, data))
+    {:noreply, new_state, new_state.idle_timeout}
+  end
+
+  # saves graphics state.
+  @spec handle_cast(:save_graphics_state, Server.t()) :: {:noreply, Server.t(), timeout()}
+  def handle_cast(:save_graphics_state, %Server{} = state) do
+    new_state =
+      %Server{state | state_stack: [state.text_state] ++ state.state_stack}
+      |> inc_req()
+      |> append("q")
+
     {:noreply, new_state, new_state.idle_timeout}
   end
 
