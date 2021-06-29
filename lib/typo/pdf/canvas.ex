@@ -168,6 +168,52 @@ defmodule Typo.PDF.Canvas do
   @spec save_state(Typo.handle()) :: :ok
   def save_state(pdf) when is_handle(pdf), do: GenServer.cast(pdf, :save_graphics_state)
 
+  # restricts given value to 0.0..1.0
+  @spec range(number()) :: number()
+  defp range(this) when is_number(this) do
+    cond do
+      this < 0.0 -> 0.0
+      this > 1.0 -> 1.0
+      true -> this
+    end
+  end
+
+  @doc """
+  Sets fill colour to Greyscale/RGB/CMYK value `v`.
+  Each component of the colour should be in the range 0.0..1.0 and is restricted
+  to this range by the function.
+  """
+  @spec set_fill_color(Typo.handle(), Typo.colour()) :: :ok
+  defdelegate set_fill_color(pdf, v), to: Typo.PDF.Canvas, as: :set_fill_colour
+
+  @doc """
+  Sets fill colour to Greyscale/RGB/CMYK value `v`.
+  Each component of the colour should be in the range 0.0..1.0 and is restricted
+  to this range by the function.
+  """
+  @spec set_fill_colour(Typo.handle(), Typo.colour()) :: :ok
+  def set_fill_colour(pdf, v) when is_handle(pdf) and is_number(v) do
+    rv = range(v)
+    append(pdf, n2s([rv, "g"]))
+  end
+
+  def set_fill_colour(pdf, {r, g, b} = _v)
+      when is_handle(pdf) and is_number(r) and is_number(g) and is_number(b) do
+    rv = range(r)
+    gv = range(g)
+    bv = range(b)
+    append(pdf, n2s([rv, gv, bv, "rg"]))
+  end
+
+  def set_fill_colour(pdf, {c, m, y, k} = _v)
+      when is_handle(pdf) and is_number(c) and is_number(y) and is_number(m) and is_number(k) do
+    cv = range(c)
+    mv = range(m)
+    yv = range(y)
+    kv = range(k)
+    append(pdf, n2s([cv, mv, yv, kv, "k"]))
+  end
+
   @doc """
   Sets line dash style.  The pattern is on for `on` points, off for `off` points,
   and (optionally) `phase` can adjust the phase of the output pattern.
@@ -233,6 +279,42 @@ defmodule Typo.PDF.Canvas do
   @spec set_mitre_limit(Typo.handle(), number()) :: :ok
   def set_mitre_limit(pdf, limit) when is_handle(pdf) and is_number(limit),
     do: append(pdf, n2s([limit, "M"]))
+
+  @doc """
+  Sets stroke colour to Greyscale/RGB/CMYK value `v`.
+  Each component of the colour should be in the range 0.0..1.0 and is restricted
+  to this range by the function.
+  """
+  @spec set_stroke_color(Typo.handle(), Typo.colour()) :: :ok
+  defdelegate set_stroke_color(pdf, v), to: Typo.PDF.Canvas, as: :set_stroke_colour
+
+  @doc """
+  Sets stroke colour to Greyscale/RGB/CMYK value `v`.
+  Each component of the colour should be in the range 0.0..1.0 and is restricted
+  to this range by the function.
+  """
+  @spec set_stroke_colour(Typo.handle(), Typo.colour()) :: :ok
+  def set_stroke_colour(pdf, v) when is_handle(pdf) and is_number(v) do
+    rv = range(v)
+    append(pdf, n2s([rv, "G"]))
+  end
+
+  def set_stroke_colour(pdf, {r, g, b} = _v)
+      when is_handle(pdf) and is_number(r) and is_number(g) and is_number(b) do
+    rv = range(r)
+    gv = range(g)
+    bv = range(b)
+    append(pdf, n2s([rv, gv, bv, "RG"]))
+  end
+
+  def set_stroke_colour(pdf, {c, m, y, k} = _v)
+      when is_handle(pdf) and is_number(c) and is_number(y) and is_number(m) and is_number(k) do
+    cv = range(c)
+    mv = range(m)
+    yv = range(y)
+    kv = range(k)
+    append(pdf, n2s([cv, mv, yv, kv, "K"]))
+  end
 
   @doc """
   Strokes the current path, with optional `close` value:
