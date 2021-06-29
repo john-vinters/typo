@@ -35,8 +35,11 @@ defmodule Typo do
   @type line_join :: :join_bevel | :join_mitre | :join_miter | :join_round
   @type op_fun :: (() -> :ok | Typo.error())
   @type page_orientation :: :portrait | :landscape | :default
-  @type path_stroke_fill :: [
-          {:fill, false | winding_rule()} | {:stroke, boolean()} | {:path, :close | :end | false}
+  @type path_clip_stroke_fill :: [
+          {:clip, boolean()}
+          | {:fill, false | winding_rule()}
+          | {:stroke, boolean()}
+          | {:path, :close | :end | false}
         ]
   @type rectangle :: {number(), number(), number(), number()}
   @type transform_matrix :: {number(), number(), number(), number(), number(), number()}

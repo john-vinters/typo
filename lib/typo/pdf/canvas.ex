@@ -410,6 +410,10 @@ defmodule Typo.PDF.Canvas do
   `options` set the path fill/stroke/closure behaviour and is a keyword list
   containing any of the following options:
 
+    `clip`:
+      * `true` - the path is intersected with the current clipping path.
+      * `false` - the path is not intersected with the current clipping path (default).
+
     `path`:
       * `:close` - the path is closed by drawing a line to the path origin.
       * `:end` - the path is ended without drawing or filling.
@@ -427,13 +431,17 @@ defmodule Typo.PDF.Canvas do
   Returns the value returned by the specified function (which should normally
   be `:ok` if successful).
   """
-  @spec with_path(Typo.handle(), Typo.op_fun(), Typo.path_stroke_fill()) :: :ok | Typo.error()
+  @spec with_path(Typo.handle(), Typo.op_fun(), Typo.path_clip_stroke_fill()) ::
+          :ok | Typo.error()
   def with_path(pdf, fun, psf \\ []) when is_handle(pdf) and is_function(fun) and is_list(psf) do
     r = fun.()
 
+    clip = Keyword.get(psf, :clip, false)
     stroke = Keyword.get(psf, :stroke, true)
     fill = Keyword.get(psf, :fill, false)
     path = Keyword.get(psf, :path, false)
+
+    cf = if clip, do: "W ", else: ""
 
     sf =
       case {stroke, fill} do
@@ -452,7 +460,7 @@ defmodule Typo.PDF.Canvas do
         false -> ""
       end
 
-    with :ok <- append(pdf, p <> sf), do: r
+    with :ok <- append(pdf, cf <> p <> sf), do: r
   end
 
   @doc """
