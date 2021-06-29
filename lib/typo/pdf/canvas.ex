@@ -404,6 +404,58 @@ defmodule Typo.PDF.Canvas do
       do: append(pdf, n2s([x1, y1, "m", x2, y2, "l", x3, y3, "l", x1, y1, "l"]))
 
   @doc """
+  Runs a function to generate a path, (optionally) stroking and/or filling then
+  closing/ending the path.
+
+  `options` set the path fill/stroke/closure behaviour and is a keyword list
+  containing any of the following options:
+
+    `path`:
+      * `:close` - the path is closed by drawing a line to the path origin.
+      * `:end` - the path is ended without drawing or filling.
+      * `false` - the path is not closed or ended (default).
+
+    `stroke`:
+      * `true` - the path is stroked (default).
+      * `false` - the path is not stroked.
+
+    `fill`:
+      * `:even_odd` - the path is filled using the even-odd winding rule.
+      * `:non_zero` - the path is filled using the non-zero winding rule.
+      * `false` - the path is not filled (default).
+
+  Returns the value returned by the specified function (which should normally
+  be `:ok` if successful).
+  """
+  @spec with_path(Typo.handle(), Typo.op_fun(), Typo.path_stroke_fill()) :: :ok | Typo.error()
+  def with_path(pdf, fun, psf \\ []) when is_handle(pdf) and is_function(fun) and is_list(psf) do
+    r = fun.()
+
+    stroke = Keyword.get(psf, :stroke, true)
+    fill = Keyword.get(psf, :fill, false)
+    path = Keyword.get(psf, :path, false)
+
+    sf =
+      case {stroke, fill} do
+        {false, false} -> ""
+        {true, false} -> "S"
+        {false, :even_odd} -> "f*"
+        {false, :non_zero} -> "f"
+        {true, :even_odd} -> "B*"
+        {true, :non_zero} -> "B"
+      end
+
+    p =
+      case path do
+        :close -> "h "
+        :end -> "n "
+        false -> ""
+      end
+
+    with :ok <- append(pdf, p <> sf), do: r
+  end
+
+  @doc """
   Saves the current graphics state, runs the specified function and then
   restores the graphics state.  Returns the value returned by the specified
   function (which should normally be `:ok` if successful) unless the call
