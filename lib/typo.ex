@@ -22,10 +22,10 @@ defmodule Typo do
 
   # type definitions to help with dialyzer use
   @type compression :: 0..9
-  @type colour :: colour_greyscale() | colour_rgb() | colour_cmyk() | colour_hex()
+  @type colour :: colour_greyscale() | colour_rgb() | colour_cmyk() | colour_binary()
+  @type colour_binary :: binary()
   @type colour_cmyk :: {number(), number(), number(), number()}
   @type colour_greyscale :: number()
-  @type colour_hex :: binary()
   @type colour_rgb :: {number(), number(), number()}
   @type error :: {:error, any()}
   @type font_id :: atom() | binary() | integer()

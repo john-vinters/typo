@@ -19,6 +19,7 @@ defmodule Typo.PDF.Canvas do
   PDF drawing functions.
   """
 
+  import Typo.PDF.Colour, only: [colour: 1, from_hex: 1]
   import Typo.Utils.Guards
   import Typo.Utils.Strings, only: [n2s: 1]
 
@@ -98,40 +99,6 @@ defmodule Typo.PDF.Canvas do
   @spec fill(Typo.handle(), Typo.winding_rule()) :: :ok
   def fill(pdf, :non_zero) when is_handle(pdf), do: append(pdf, "f")
   def fill(pdf, :even_odd) when is_handle(pdf), do: append(pdf, "f*")
-
-  # converts from rgb hex string to {r, g, b} tuple with 0.0..1.0 ranges.
-  @spec from_hex(binary()) :: Typo.colour_rgb() | :error
-  defp from_hex(<<r::8, g::8, b::8>>) do
-    rh = <<r::8, r::8>>
-    gh = <<g::8, g::8>>
-    bh = <<b::8, b::8>>
-
-    with {rv, ""} <- Integer.parse(rh, 16),
-         {gv, ""} <- Integer.parse(gh, 16),
-         {bv, ""} <- Integer.parse(bh, 16) do
-      rrv = Float.round(rv / 255.0, 3)
-      rgv = Float.round(gv / 255.0, 3)
-      rbv = Float.round(bv / 255.0, 3)
-      {rrv, rgv, rbv}
-    else
-      _ -> :error
-    end
-  end
-
-  defp from_hex(<<r::binary-size(2), g::binary-size(2), b::binary-size(2)>>) do
-    with {rv, ""} <- Integer.parse(r, 16),
-         {gv, ""} <- Integer.parse(g, 16),
-         {bv, ""} <- Integer.parse(b, 16) do
-      rrv = Float.round(rv / 255.0, 3)
-      rgv = Float.round(gv / 255.0, 3)
-      rbv = Float.round(bv / 255.0, 3)
-      {rrv, rgv, rbv}
-    else
-      _ -> :error
-    end
-  end
-
-  defp from_hex(_), do: :error
 
   @doc """
   Fills the current path using the optional `winding` rule:
@@ -213,7 +180,7 @@ defmodule Typo.PDF.Canvas do
   end
 
   @doc """
-  Sets fill colour to Greyscale/RGB/CMYK/Hex value `v`.
+  Sets fill colour to Greyscale/RGB/CMYK/Hex/Name value `v`.
   For Greyscale/RGB/CMYK each component of the colour should be in the range
   0.0..1.0 and is restricted to this range by the function.  For hex colours,
   the colour should be specified as '#xxx' or '#xxxxxxx' where `x` represents
@@ -223,7 +190,7 @@ defmodule Typo.PDF.Canvas do
   defdelegate set_fill_color(pdf, v), to: Typo.PDF.Canvas, as: :set_fill_colour
 
   @doc """
-  Sets fill colour to Greyscale/RGB/CMYK/Hex value `v`.
+  Sets fill colour to Greyscale/RGB/CMYK/Hex/Name value `v`.
   For Greyscale/RGB/CMYK each component of the colour should be in the range
   0.0..1.0 and is restricted to this range by the function.  For hex colours,
   the colour should be specified as '#xxx' or '#xxxxxxx' where `x` represents
@@ -262,6 +229,14 @@ defmodule Typo.PDF.Canvas do
 
   def set_fill_colour(pdf, <<?#::8, colour::binary-size(6)>>) do
     with {_r, _g, _b} = c <- from_hex(colour) do
+      set_fill_colour(pdf, c)
+    else
+      :error -> {:error, :invalid_colour}
+    end
+  end
+
+  def set_fill_colour(pdf, <<cn::binary>>) do
+    with {_r, _g, _b} = c <- colour(String.downcase(cn)) do
       set_fill_colour(pdf, c)
     else
       :error -> {:error, :invalid_colour}
@@ -335,7 +310,7 @@ defmodule Typo.PDF.Canvas do
     do: append(pdf, n2s([limit, "M"]))
 
   @doc """
-  Sets stroke colour to Greyscale/RGB/CMYK/Hex value `v`.
+  Sets stroke colour to Greyscale/RGB/CMYK/Hex/Name value `v`.
   For Greyscale/RGB/CMYK each component of the colour should be in the range
   0.0..1.0 and is restricted to this range by the function.  For hex colours,
   the colour should be specified as '#xxx' or '#xxxxxxx' where `x` represents
@@ -345,7 +320,7 @@ defmodule Typo.PDF.Canvas do
   defdelegate set_stroke_color(pdf, v), to: Typo.PDF.Canvas, as: :set_stroke_colour
 
   @doc """
-  Sets stroke colour to Greyscale/RGB/CMYK/Hex value `v`.
+  Sets stroke colour to Greyscale/RGB/CMYK/Hex/Name value `v`.
   For Greyscale/RGB/CMYK each component of the colour should be in the range
   0.0..1.0 and is restricted to this range by the function.  For hex colours,
   the colour should be specified as '#xxx' or '#xxxxxxx' where `x` represents
@@ -384,6 +359,14 @@ defmodule Typo.PDF.Canvas do
 
   def set_stroke_colour(pdf, <<?#::8, colour::binary-size(6)>>) do
     with {_r, _g, _b} = c <- from_hex(colour) do
+      set_stroke_colour(pdf, c)
+    else
+      :error -> {:error, :invalid_colour}
+    end
+  end
+
+  def set_stroke_colour(pdf, <<cn::binary>>) do
+    with {_r, _g, _b} = c <- colour(String.downcase(cn)) do
       set_stroke_colour(pdf, c)
     else
       :error -> {:error, :invalid_colour}
