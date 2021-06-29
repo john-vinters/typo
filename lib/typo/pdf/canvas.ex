@@ -245,6 +245,17 @@ defmodule Typo.PDF.Canvas do
   def stroke(pdf, :no_close) when is_handle(pdf), do: append(pdf, "S")
 
   @doc """
+  Applies the given matrix to the current transformation matrix.
+  See the module `Typo.PDF.Transform` for functions to generate
+  the required matrices.
+  """
+  @spec transform(Typo.handle(), Typo.transform_matrix()) :: :ok
+  def transform(pdf, {a, b, c, d, e, f})
+      when is_handle(pdf) and is_number(a) and is_number(b) and is_number(c) and is_number(d) and
+             is_number(e) and is_number(f),
+      do: append(pdf, n2s([a, b, c, d, e, f, "cm"]))
+
+  @doc """
   Appends a triangle with corners `p1`, `p2` and `p3` onto the current path.
   """
   @spec triangle(Typo.handle(), Typo.xy(), Typo.xy(), Typo.xy()) :: :ok
