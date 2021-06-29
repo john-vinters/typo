@@ -32,7 +32,7 @@ defmodule Typo.PDF.PageSize do
   Returns `{:error, :invalid_page_size}` if page size atom
   not found.
   """
-  @spec page_size(atom()) :: {0, 0, pos_integer(), pos_integer()} | {:error, :invalid_page_size}
+  @spec page_size(Typo.page_size()) :: {0, 0, 89..2836, 125..4008} | {:error, :invalid_page_size}
   def page_size(:a0), do: {0, 0, 2380, 3368}
   def page_size(:a1), do: {0, 0, 1684, 2380}
   def page_size(:a2), do: {0, 0, 1190, 1684}

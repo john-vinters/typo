@@ -35,6 +35,11 @@ defmodule Typo do
   @type line_join :: :join_bevel | :join_mitre | :join_miter | :join_round
   @type op_fun :: (() -> :ok | Typo.error())
   @type page_orientation :: :portrait | :landscape | :default
+  @type page_size :: page_size_a() | page_size_b() | page_size_o()
+  @type page_size_a :: :a0 | :a1 | :a2 | :a3 | :a4 | :a5 | :a6 | :a7 | :a8
+  @type page_size_b :: :b0 | :b1 | :b2 | :b3 | :b4 | :b5 | :b6 | :b7 | :b8 | :b9 | :b10
+  @type page_size_o ::
+          :c5e | :comm10e | :dle | :executive | :folio | :ledger | :legal | :letter | :tabloid
   @type path_clip_stroke_fill :: [
           {:clip, boolean()}
           | {:fill, false | winding_rule()}
