@@ -70,9 +70,9 @@ defmodule Typo.PDF.Server do
   # returns true if the given binary ends with CR, LF or Space.
   # NOTE: also returns true if the binary is zero length.
   @spec ends_with_crlfsp?(binary()) :: boolean()
-  def ends_with_crlfsp?(<<>>), do: true
+  defp ends_with_crlfsp?(<<>>), do: true
 
-  def ends_with_crlfsp?(<<data::binary>>) do
+  defp ends_with_crlfsp?(<<data::binary>>) do
     case :binary.last(data) do
       10 -> true
       13 -> true
