@@ -155,19 +155,19 @@ defmodule Typo.PDF.Canvas do
 
   # returns scaled size of image, preserving aspect ratio if possible.
   @spec image_scale(number(), number(), nil | number(), nil | number()) :: {number(), number()}
-  def image_scale(iw, ih, nil, nil) when is_number(iw) and is_number(ih), do: {iw, ih}
+  defp image_scale(iw, ih, nil, nil) when is_number(iw) and is_number(ih), do: {iw, ih}
 
-  def image_scale(iw, ih, dw, nil) when is_number(iw) and is_number(ih) and is_number(dw) do
+  defp image_scale(iw, ih, dw, nil) when is_number(iw) and is_number(ih) and is_number(dw) do
     sf = dw / iw
     {iw * sf, ih * sf}
   end
 
-  def image_scale(iw, ih, nil, dh) when is_number(iw) and is_number(ih) and is_number(dh) do
+  defp image_scale(iw, ih, nil, dh) when is_number(iw) and is_number(ih) and is_number(dh) do
     sf = dh / ih
     {iw * sf, ih * sf}
   end
 
-  def image_scale(_iw, _ih, dw, dh) when is_number(dw) and is_number(dh), do: {dw, dh}
+  defp image_scale(_iw, _ih, dw, dh) when is_number(dw) and is_number(dh), do: {dw, dh}
 
   @doc """
   Appends a line segment onto the current path from the current graphics
