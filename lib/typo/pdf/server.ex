@@ -210,7 +210,7 @@ defmodule Typo.PDF.Server do
 
   # appends binary to page stream.
   @spec handle_cast({:raw_append, binary()}, Server.t()) :: {:noreply, Server.t(), timeout()}
-  def handle_cast({:raw_append, data}, %Server{} = state) do
+  def handle_cast({:raw_append, <<data::binary>>}, %Server{} = state) do
     new_state = inc_req(append(state, data))
     {:noreply, new_state, new_state.idle_timeout}
   end
