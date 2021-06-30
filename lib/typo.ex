@@ -31,6 +31,7 @@ defmodule Typo do
   @type font_id :: atom() | binary() | integer()
   @type handle :: pid()
   @type image_id :: atom() | binary() | integer()
+  @type image_options :: [{:height, number()} | {:rotate, number()} | {:width, number()}]
   @type line_cap :: :cap_butt | :cap_round | :cap_square
   @type line_join :: :join_bevel | :join_mitre | :join_miter | :join_round
   @type op_fun :: (() -> :ok | Typo.error())

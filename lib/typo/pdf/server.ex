@@ -125,6 +125,21 @@ defmodule Typo.PDF.Server do
     end
   end
 
+  # places a loaded image onto the page.
+  @spec handle_call({:place_image, Typo.image_id()}, any(), Server.t()) ::
+          {:reply, :ok | Typo.error(), Server.t(), timeout()}
+  def handle_call({:place_image, image_id}, _from, %Server{} = state) do
+    new_state = inc_req(state)
+
+    with nid when is_integer(nid) <- Map.get(state.image_ids, image_id, :not_found) do
+      new_state = append(state, "/Im#{nid} Do")
+      {:reply, :ok, new_state, new_state.idle_timeout}
+    else
+      :not_found ->
+        {:reply, {:error, :not_found}, new_state, new_state.idle_timeout}
+    end
+  end
+
   # restores graphics state.
   @spec handle_call(:restore_graphics_state, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}

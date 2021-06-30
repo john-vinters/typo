@@ -22,7 +22,7 @@ defmodule Typo.PDF.Canvas do
   import Typo.PDF.Colour, only: [colour: 1, from_hex: 1]
   import Typo.Utils.Guards
   import Typo.Utils.Strings, only: [n2s: 1]
-  alias Typo.PDF.PageSize
+  alias Typo.PDF.{PageSize, Transform}
 
   @k 4.0 * ((:math.sqrt(2) - 1.0) / 3.0)
 
@@ -122,6 +122,54 @@ defmodule Typo.PDF.Canvas do
     do: GenServer.call(pdf, {:get_image_size, image_id})
 
   @doc """
+  Places a loaded image `image_id` onto the page at coordinates `p` with
+  `options`:
+    * `:height` - image height (in points).
+    * `:rotate` - anti-clockwise rotation in degrees (default 0).
+    * `:width` - image width (in points).
+
+  If only `:height` or `:width` is specified (but not both), the image
+  aspect ratio is preserved; if both are specified then the aspect ratio
+  can be overridden.
+
+  If both `:height` and `:width` are left unspecified, then the image is scaled
+  at 1px => 1pt.
+  """
+  @spec image(Typo.handle(), Typo.image_id(), Typo.xy(), Typo.image_options()) ::
+          :ok | Typo.error()
+  def image(pdf, image_id, {x, y} = _p, options \\ [])
+      when is_handle(pdf) and is_image_id(image_id) and is_number(x) and is_number(y) do
+    height = Keyword.get(options, :height, nil)
+    rotate = Keyword.get(options, :rotate, 0)
+    width = Keyword.get(options, :width, nil)
+
+    with_state(pdf, fn ->
+      with {:ok, {w, h}} <- get_image_size(pdf, image_id),
+           {sw, sh} <- image_scale(w, h, width, height),
+           :ok <- transform(pdf, Transform.translate(x, y)),
+           :ok <- transform(pdf, Transform.rotate(rotate)),
+           :ok <- transform(pdf, Transform.scale(sw, sh)),
+           do: place_image(pdf, image_id)
+    end)
+  end
+
+  # returns scaled size of image, preserving aspect ratio if possible.
+  @spec image_scale(number(), number(), nil | number(), nil | number()) :: {number(), number()}
+  def image_scale(iw, ih, nil, nil) when is_number(iw) and is_number(ih), do: {iw, ih}
+
+  def image_scale(iw, ih, dw, nil) when is_number(iw) and is_number(ih) and is_number(dw) do
+    sf = dw / iw
+    {iw * sf, ih * sf}
+  end
+
+  def image_scale(iw, ih, nil, dh) when is_number(iw) and is_number(ih) and is_number(dh) do
+    sf = dh / ih
+    {iw * sf, ih * sf}
+  end
+
+  def image_scale(_iw, _ih, dw, dh) when is_number(dw) and is_number(dh), do: {dw, dh}
+
+  @doc """
   Appends a line segment onto the current path from the current graphics
   position to point `p`.
   """
@@ -159,6 +207,17 @@ defmodule Typo.PDF.Canvas do
   @spec move_to(Typo.handle(), Typo.xy()) :: :ok
   def move_to(pdf, {x, y} = _p) when is_handle(pdf) and is_number(x) and is_number(y),
     do: append(pdf, n2s([x, y, "m"]))
+
+  @doc """
+  Places loaded image `image_id` onto the page.
+
+  NOTE: normally requires use of transform/2 to scale and/or rotate the image
+  into the correct location.  You should probably use `image/4` as this has
+  a much easier to use interface that does all this for you.
+  """
+  @spec place_image(Typo.handle(), Typo.image_id()) :: :ok | Typo.error()
+  def place_image(pdf, image_id) when is_handle(pdf) and is_image_id(image_id),
+    do: GenServer.call(pdf, {:place_image, image_id})
 
   @doc """
   Draws a rectangle with lower left corner `p`, with dimensions `width` by
