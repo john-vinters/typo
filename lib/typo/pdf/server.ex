@@ -228,16 +228,9 @@ defmodule Typo.PDF.Server do
 
   # sets compression.
   @spec handle_cast({:set_compression, 0..9}, Server.t()) :: {:noreply, Server.t(), timeout()}
-  def handle_cast({:set_compression, level}, %Server{} = state) do
-    cmp =
-      cond do
-        level < 0 -> 0
-        level > 9 -> 9
-        true -> level
-      end
-
+  def handle_cast({:set_compression, level}, %Server{} = state) when level >= 0 and level <= 9 do
     new_state =
-      %Server{state | compression: cmp}
+      %Server{state | compression: level}
       |> inc_req()
 
     {:noreply, new_state, new_state.idle_timeout}
