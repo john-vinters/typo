@@ -167,9 +167,9 @@ defmodule Typo.PDF.Canvas do
     with_state(pdf, fn ->
       with {:ok, {w, h}} <- get_image_size(pdf, image_id),
            {sw, sh} <- image_scale(w, h, width, height),
-           :ok <- transform(pdf, Transform.translate(x, y)),
-           :ok <- transform(pdf, Transform.rotate(rotate)),
            :ok <- transform(pdf, Transform.scale(sw, sh)),
+           :ok <- transform(pdf, Transform.rotate(rotate)),
+           :ok <- transform(pdf, Transform.translate(x, y)),
            do: place_image(pdf, image_id)
     end)
   end
