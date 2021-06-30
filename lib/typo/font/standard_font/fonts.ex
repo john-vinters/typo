@@ -51,6 +51,6 @@ defmodule Typo.Font.StandardFont.Fonts do
 
   @std_fonts std_fonts
 
-  @spec standard_fonts :: map()
+  @spec standard_fonts :: %{optional(String.t()) => StandardFont.t()}
   def standard_fonts, do: @std_fonts
 end
