@@ -184,22 +184,23 @@ defmodule Typo.PDF.Server do
   # sets current page number.
   @spec handle_call({:set_page, integer()}, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
-  def handle_call({:set_page, page_number}, _from, %Server{} = state) do
-    if state.state_stack != [] do
-      {:reply, {:error, :graphcs_stack_not_empty}, state, state.idle_timeout}
-    else
-      ps = Map.get(state.pages, page_number, <<>>)
+  def handle_call({:set_page, page_number}, _from, %Server{state_stack: []} = state) do
+    ps = Map.get(state.pages, page_number, <<>>)
 
-      new_state =
-        %Server{
-          save_page(state)
-          | current_page: page_number,
-            stream: ps
-        }
-        |> inc_req()
+    new_state =
+      %Server{
+        save_page(state)
+        | current_page: page_number,
+          stream: ps
+      }
+      |> inc_req()
 
-      {:reply, :ok, new_state, new_state.idle_timeout}
-    end
+    {:reply, :ok, new_state, new_state.idle_timeout}
+  end
+
+  def handle_call({:set_page, _page_number}, _from, %Server{state_stack: [_h | _t]} = state) do
+    new_state = inc_req(state)
+    {:reply, {:error, :graphics_stack_not_empty}, new_state, new_state.idle_timeout}
   end
 
   # stops the server.
