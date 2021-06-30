@@ -28,6 +28,22 @@ defmodule Typo.PDF do
   @spec get_compression(Typo.handle()) :: {:ok, 0..9} | Typo.error()
   def get_compression(pdf) when is_handle(pdf), do: GenServer.call(pdf, :get_compression)
 
+  @doc """
+  Gets document metadata associated with `key`, which should be one of:
+    * `:author`
+    * `:creator`
+    * `:keywords`
+    * `:producer`
+    * `:subject`
+    * `:title`
+
+  Returns `{:ok, metadata_value}` if successful, or `{:error, :not_found}` if
+  no metadata set for given `key`.
+  """
+  @spec get_metadata(Typo.handle(), atom()) :: {:ok, String.t()} | Typo.error()
+  def get_metadata(pdf, key) when is_handle(pdf) and is_atom(key),
+    do: GenServer.call(pdf, {:get_metadata, key})
+
   @doc false
   @spec get_state(Typo.handle()) :: Typo.PDF.Server.t()
   def get_state(pdf) when is_handle(pdf), do: GenServer.call(pdf, :get_state)
@@ -38,6 +54,22 @@ defmodule Typo.PDF do
   @spec set_compression(Typo.handle(), 0..9) :: :ok
   def set_compression(pdf, level) when is_handle(pdf) and level in 0..9,
     do: GenServer.cast(pdf, {:set_compression, level})
+
+  @doc """
+  Sets document metadata.
+  `key` should be one of:
+    * `:author`
+    * `:creator`
+    * `:keywords`
+    * `:producer`
+    * `:subject`
+    * `:title`
+
+  `value` should be a string.
+  """
+  @spec set_metadata(Typo.handle(), atom(), String.t()) :: :ok
+  def set_metadata(pdf, key, value) when is_handle(pdf) and is_atom(key) and is_binary(value),
+    do: GenServer.cast(pdf, {:set_metadata, key, value})
 
   @doc """
   Starts a linked PDF server process.

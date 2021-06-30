@@ -34,6 +34,7 @@ defmodule Typo.PDF.Server do
           image_ids: map(),
           images: map(),
           in_text: boolean(),
+          metadata: map(),
           pages: map(),
           pdf_version: String.t(),
           requests: non_neg_integer(),
@@ -53,6 +54,7 @@ defmodule Typo.PDF.Server do
             image_ids: %{},
             images: %{},
             in_text: false,
+            metadata: %{},
             pages: %{},
             pdf_version: "1.7",
             requests: 0,
@@ -110,6 +112,18 @@ defmodule Typo.PDF.Server do
 
       %JPEG{} = jpeg ->
         {:reply, {:ok, {jpeg.width, jpeg.height}}, new_state, new_state.idle_timeout}
+    end
+  end
+
+  # returns metadata.
+  @spec handle_call({:get_metadata, atom()}, any(), Server.t()) ::
+          {:reply, {:ok, String.t()} | Typo.error(), Server.t(), timeout()}
+  def handle_call({:get_metadata, key}, _from, %Server{} = state) when is_atom(key) do
+    new_state = inc_req(state)
+
+    case Map.get(new_state.metadata, key) do
+      nil -> {:reply, {:error, :not_found}, new_state, new_state.idle_timeout}
+      str when is_binary(str) -> {:reply, {:ok, str}, new_state, new_state.idle_timeout}
     end
   end
 
@@ -229,6 +243,18 @@ defmodule Typo.PDF.Server do
     {:noreply, new_state, new_state.idle_timeout}
   end
 
+  # sets document metadata.
+  @spec handle_cast({:set_metadata, atom(), String.t()}, Server.t()) ::
+          {:noreply, Server.t(), timeout()}
+  def handle_cast({:set_metadata, key, value}, %Server{} = state)
+      when is_atom(key) and is_binary(value) do
+    new_state =
+      %Server{state | metadata: Map.put(state.metadata, key, value)}
+      |> inc_req()
+
+    {:noreply, new_state, new_state.idle_timeout}
+  end
+
   # sets page media box.
   @spec handle_cast(
           {:set_page_size, :current | :default | integer(),
@@ -257,7 +283,12 @@ defmodule Typo.PDF.Server do
   # initializes server state - currently just saves startup timestamp.
   @spec init(Server.t()) :: {:ok, Server.t(), timeout()}
   def init(%Server{} = state) do
-    new_state = %Server{state | started: :erlang.localtime()}
+    new_state = %Server{
+      state
+      | metadata: Map.put(state.metadata, :creator, "Typo PDF Library v#{Typo.version()}"),
+        started: :erlang.localtime()
+    }
+
     {:ok, new_state, new_state.idle_timeout}
   end
 
