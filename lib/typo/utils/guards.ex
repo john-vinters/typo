@@ -23,4 +23,9 @@ defmodule Typo.Utils.Guards do
   Returns `true` if `p` is possibly a server connection.
   """
   defguard is_handle(p) when is_pid(p)
+
+  @doc """
+  Returns `true` if `id` is an image id.
+  """
+  defguard is_image_id(id) when is_binary(id) or is_atom(id) or is_integer(id)
 end

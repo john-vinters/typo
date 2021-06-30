@@ -19,6 +19,8 @@ defmodule Typo.PDF.Server do
   PDF server.
   """
 
+  import Typo.Utils.Guards
+  alias Typo.Image.{JPEG, PNG}
   alias Typo.PDF.Server
 
   @type t :: %__MODULE__{
@@ -28,6 +30,8 @@ defmodule Typo.PDF.Server do
           geometry: map(),
           hibernations: non_neg_integer(),
           idle_timeout: timeout(),
+          image_id: pos_integer(),
+          image_ids: map(),
           images: map(),
           in_text: boolean(),
           pages: map(),
@@ -45,6 +49,8 @@ defmodule Typo.PDF.Server do
             geometry: %{:default => %{:media_box => {0, 0, 595, 842}}},
             hibernations: 0,
             idle_timeout: 1000,
+            image_id: 1,
+            image_ids: %{},
             images: %{},
             in_text: false,
             pages: %{},
@@ -86,6 +92,19 @@ defmodule Typo.PDF.Server do
   def handle_call(:get_state, _from, %Server{} = state) do
     new_state = inc_req(state)
     {:reply, new_state, new_state, new_state.idle_timeout}
+  end
+
+  # loads an image into the server.
+  @spec handle_call({:load_image, Typo.image_id(), String.t()}, any(), Server.t()) ::
+          {:reply, :ok | Typo.error(), Server.t(), timeout()}
+  def handle_call({:load_image, image_id, filename}, _from, %Server{} = state) do
+    new_state = inc_req(state)
+
+    with {:ok, new_state} <- register_image(state, image_id, filename) do
+      {:reply, :ok, new_state, new_state.idle_timeout}
+    else
+      {:error, _} = err -> {:reply, err, new_state, new_state.idle_timeout}
+    end
   end
 
   # restores graphics state.
@@ -161,6 +180,37 @@ defmodule Typo.PDF.Server do
   def init(%Server{} = state) do
     new_state = %Server{state | started: :erlang.localtime()}
     {:ok, new_state, new_state.idle_timeout}
+  end
+
+  # loads an registers an image.
+  @spec register_image(Server.t(), Typo.image_id(), String.t()) ::
+          {:ok, Server.t()} | Typo.error()
+  defp register_image(%Server{} = state, image_id, filename)
+       when is_image_id(image_id) and is_binary(filename) do
+    with {:ok, data} <- File.read(filename),
+         {:ok, %{} = info} <- register_image_detect(data) do
+      new_image_ids = Map.put(state.image_ids, image_id, state.image_id)
+      new_images = Map.put(state.images, state.image_id, info)
+
+      new_state = %Server{
+        state
+        | image_id: state.image_id + 1,
+          image_ids: new_image_ids,
+          images: new_images
+      }
+
+      {:ok, new_state}
+    end
+  end
+
+  # handles image type detection and processing.
+  @spec register_image_detect(binary()) :: {:ok, PNG.t() | JPEG.t()} | Typo.error()
+  def register_image_detect(<<data::binary>>) do
+    cond do
+      PNG.is_png?(data) -> PNG.process(data)
+      JPEG.is_jpeg?(data) -> JPEG.process(data)
+      true -> {:error, :unsupported_image}
+    end
   end
 
   # sets media box for given page / default.
