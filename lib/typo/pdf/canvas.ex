@@ -209,7 +209,7 @@ defmodule Typo.PDF.Canvas do
 
   defp lines_acc([], result), do: result
 
-  defp lines_acc([{x, y} | t], result) do
+  defp lines_acc([{x, y} | t], result) when is_number(x) and is_number(y) do
     lines_acc(t, <<result::binary, n2s([x, y, "m "])::binary>>)
   end
 
