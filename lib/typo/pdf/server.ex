@@ -89,6 +89,29 @@ defmodule Typo.PDF.Server do
     end
   end
 
+  # deletes page.
+  @spec handle_call({:delete_page, integer()}, any(), Server.t()) ::
+          {:reply, :ok | Typo.error(), Server.t(), timeout()}
+  def handle_call({:delete_page, page_number}, _from, %Server{current_page: page_number} = state) do
+    new_state = inc_req(state)
+    {:reply, {:error, :is_current_page}, new_state, new_state.idle_timeout}
+  end
+
+  def handle_call({:delete_page, page_number}, _from, %Server{state_stack: []} = state)
+      when is_integer(page_number) do
+    new_state =
+      %Server{state | pages: Map.delete(state.pages, page_number)}
+      |> inc_req()
+
+    {:reply, :ok, new_state, new_state.idle_timeout}
+  end
+
+  def handle_call({:delete_page, page_number}, _from, %Server{state_stack: [_h | _t]} = state)
+      when is_integer(page_number) do
+    new_state = inc_req(state)
+    {:reply, {:error, :graphics_stack_not_empty}, new_state, new_state.idle_timeout}
+  end
+
   # returns the current compression level.
   @spec handle_call(:get_compression, any(), Server.t()) ::
           {:reply, {:ok, 0..9} | Typo.error(), Server.t(), timeout()}

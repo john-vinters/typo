@@ -73,6 +73,21 @@ defmodule Typo.PDF.Canvas do
   def close_path(pdf) when is_handle(pdf), do: append(pdf, "h")
 
   @doc """
+  Deletes `page` from the set of pages.  This cannot be used to delete the current
+  page - if you wish to do this, switch to another page using `set_page/2` before
+  calling this function on the page you want to delete.
+
+  NOTE: this does not affect any loaded resources (e.g. images used on the deleted
+  page will still be in memory and will appear in the output PDF file).
+
+  NOTE: if the current page is deleted there must be no un-popped graphics states
+  (this can't be called from within a `with_state/2` block).
+  """
+  @spec delete_page(Typo.handle(), integer()) :: :ok | Typo.error()
+  def delete_page(pdf, page_number) when is_handle(pdf) and is_integer(page_number),
+    do: GenServer.call(pdf, {:delete_page, page_number})
+
+  @doc """
   Appends an Ellipse centred on `p` with x radius `rx` and y radius `ry` onto
   the current path.
   """
