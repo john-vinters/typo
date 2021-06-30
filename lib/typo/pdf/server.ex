@@ -20,12 +20,15 @@ defmodule Typo.PDF.Server do
   """
 
   import Typo.Utils.Guards
+  alias Typo.Font.StandardFont
   alias Typo.Image.{JPEG, PNG}
   alias Typo.PDF.Server
 
   @type t :: %__MODULE__{
           compression: 0..9,
           current_page: integer(),
+          font_id: pos_integer(),
+          font_ids: map(),
           fonts: map(),
           geometry: map(),
           hibernations: non_neg_integer(),
@@ -46,6 +49,8 @@ defmodule Typo.PDF.Server do
 
   defstruct compression: 4,
             current_page: 1,
+            font_id: 1,
+            font_ids: %{},
             fonts: %{},
             geometry: %{:default => %{:media_box => {0, 0, 595, 842}}},
             hibernations: 0,
@@ -311,11 +316,13 @@ defmodule Typo.PDF.Server do
   # initializes server state - currently just saves startup timestamp.
   @spec init(Server.t()) :: {:ok, Server.t(), timeout()}
   def init(%Server{} = state) do
-    new_state = %Server{
-      state
-      | metadata: Map.put(state.metadata, :creator, "Typo PDF Library v#{Typo.version()}"),
-        started: :erlang.localtime()
-    }
+    new_state =
+      %Server{
+        state
+        | metadata: Map.put(state.metadata, :creator, "Typo PDF Library v#{Typo.version()}"),
+          started: :erlang.localtime()
+      }
+      |> register_standard_fonts()
 
     {:ok, new_state, new_state.idle_timeout}
   end
@@ -349,6 +356,24 @@ defmodule Typo.PDF.Server do
       JPEG.is_jpeg?(data) -> JPEG.process(data)
       true -> {:error, :unsupported_image}
     end
+  end
+
+  # registers PDF standard 14 core fonts.
+  @spec register_standard_fonts(Server.t()) :: Server.t()
+  defp register_standard_fonts(%Server{} = state) do
+    std = StandardFont.Fonts.standard_fonts()
+
+    Enum.reduce(std, state, fn {name, font}, acc_state ->
+      new_font_ids = Map.put(acc_state.font_ids, name, acc_state.font_id)
+      new_fonts = Map.put(acc_state.fonts, acc_state.font_id, font)
+
+      %Server{
+        acc_state
+        | font_id: acc_state.font_id + 1,
+          font_ids: new_font_ids,
+          fonts: new_fonts
+      }
+    end)
   end
 
   # saves the current page stream.
