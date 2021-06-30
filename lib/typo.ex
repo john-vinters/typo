@@ -40,6 +40,11 @@ defmodule Typo do
   @type page_size_b :: :b0 | :b1 | :b2 | :b3 | :b4 | :b5 | :b6 | :b7 | :b8 | :b9 | :b10
   @type page_size_o ::
           :c5e | :comm10e | :dle | :executive | :folio | :ledger | :legal | :letter | :tabloid
+  @type page_size_options :: [
+          {:page, :current | :default | integer()},
+          {:size, page_size() | {number(), number(), number(), number()}},
+          {:orientation, :landscape | :portrait | :default}
+        ]
   @type path_clip_stroke_fill :: [
           {:clip, boolean()}
           | {:fill, false | winding_rule()}

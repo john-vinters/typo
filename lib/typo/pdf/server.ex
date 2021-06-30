@@ -131,6 +131,20 @@ defmodule Typo.PDF.Server do
     {:noreply, new_state, new_state.idle_timeout}
   end
 
+  # sets page media box.
+  @spec handle_cast(
+          {:set_page_size, :current | :default | integer(),
+           {number(), number(), number(), number()}},
+          Server.t()
+        ) :: {:noreply, Server.t(), timeout()}
+  def handle_cast({:set_page_size, page, {_a, _b, _c, _d} = size}, %Server{} = state) do
+    new_state =
+      set_media_box(state, page, size)
+      |> inc_req()
+
+    {:noreply, new_state, new_state.idle_timeout}
+  end
+
   # handles idle timeouts (hibernates the server).
   @spec handle_info(:timeout, Server.t()) :: {:noreply, Server.t(), :hibernate}
   def handle_info(:timeout, %Server{} = state) do
@@ -147,6 +161,21 @@ defmodule Typo.PDF.Server do
   def init(%Server{} = state) do
     new_state = %Server{state | started: :erlang.localtime()}
     {:ok, new_state, new_state.idle_timeout}
+  end
+
+  # sets media box for given page / default.
+  @spec set_media_box(
+          Server.t(),
+          :current | :default | integer(),
+          {number(), number(), number(), number()}
+        ) :: Server.t()
+  defp set_media_box(%Server{} = state, :current, {_a, _b, _c, _d} = sz),
+    do: set_media_box(state, state.current_page, sz)
+
+  defp set_media_box(%Server{} = state, page, {_a, _b, _c, _d} = sz) do
+    existing_geom = Map.get(state.geometry, page, %{})
+    new_geom = Map.put(state.geometry, page, Map.put(existing_geom, :media_box, sz))
+    %Server{state | geometry: new_geom}
   end
 
   @doc """

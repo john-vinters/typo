@@ -22,6 +22,7 @@ defmodule Typo.PDF.Canvas do
   import Typo.PDF.Colour, only: [colour: 1, from_hex: 1]
   import Typo.Utils.Guards
   import Typo.Utils.Strings, only: [n2s: 1]
+  alias Typo.PDF.PageSize
 
   @k 4.0 * ((:math.sqrt(2) - 1.0) / 3.0)
 
@@ -308,6 +309,53 @@ defmodule Typo.PDF.Canvas do
   @spec set_mitre_limit(Typo.handle(), number()) :: :ok
   def set_mitre_limit(pdf, limit) when is_handle(pdf) and is_number(limit),
     do: append(pdf, n2s([limit, "M"]))
+
+  @doc """
+  Sets document page size.  `options` is a keyword list which can contain any of:
+
+  `:page`:
+    * `:default` - sets the default page size for the document (default).
+    * `:current` - sets the page size for the current page.
+    * `page_number` - sets the page size for the given page number, which
+      should be an integer.
+
+  `:size` can either be a page size atom (defaults to `:a4`), or a
+  4-tuple.
+
+  `:orientation`:
+    * `:landscape` - forces landscape orientation.
+    * `:portrait` - forces portrait orientation.
+    * `:default` - leaves orientation as page size specifies (default).
+  """
+  @spec set_page_size(Typo.handle(), Typo.page_size_options()) :: :ok | Typo.error()
+  def set_page_size(pdf, options \\ []) when is_handle(pdf) and is_list(options) do
+    page = Keyword.get(options, :page, :default)
+    size = Keyword.get(options, :size, :a4)
+    orientation = Keyword.get(options, :orientation, :default)
+    set_page_size_apply(pdf, page, size, orientation)
+  end
+
+  @spec set_page_size_apply(
+          Typo.handle(),
+          :default | :current | integer(),
+          atom() | {number(), number(), number(), number()},
+          :landscape | :portrait | :default
+        ) :: :ok | {:error, :invalid_page_size}
+  def set_page_size_apply(pdf, page, size, orientation) when is_handle(pdf) and is_atom(size) do
+    with {_a, _b, _c, _d} = s <- PageSize.page_size(size),
+         do: set_page_size_apply(pdf, page, s, orientation)
+  end
+
+  def set_page_size_apply(pdf, page, {_a, _b, _c, _d} = size, :landscape),
+    do: set_page_size_apply(pdf, page, PageSize.landscape(size), :default)
+
+  def set_page_size_apply(pdf, page, {_a, _b, _c, _d} = size, :portrait),
+    do: set_page_size_apply(pdf, page, PageSize.portrait(size), :default)
+
+  def set_page_size_apply(pdf, page, {a, b, c, d} = size, :default)
+      when is_handle(pdf) and (page in [:current, :default] or is_integer(page)) and is_number(a) and
+             is_number(b) and is_number(c) and is_number(d),
+      do: GenServer.cast(pdf, {:set_page_size, page, size})
 
   @doc """
   Sets stroke colour to Greyscale/RGB/CMYK/Hex/Name value `v`.
