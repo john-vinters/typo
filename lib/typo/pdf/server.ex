@@ -127,6 +127,14 @@ defmodule Typo.PDF.Server do
     end
   end
 
+  # returns the current page number.
+  @spec handle_call(:get_page, any(), Server.t()) ::
+          {:reply, {:ok, integer()}, Server.t(), timeout()}
+  def handle_call(:get_page, _from, %Server{} = state) do
+    new_state = inc_req(state)
+    {:reply, {:ok, new_state.current_page}, new_state, new_state.idle_timeout}
+  end
+
   # returns the current server state (for debugging).
   @spec handle_call(:get_state, any(), Server.t()) :: {:reply, Server.t(), Server.t(), timeout()}
   def handle_call(:get_state, _from, %Server{} = state) do

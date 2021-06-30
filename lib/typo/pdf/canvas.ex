@@ -122,6 +122,12 @@ defmodule Typo.PDF.Canvas do
     do: GenServer.call(pdf, {:get_image_size, image_id})
 
   @doc """
+  Returns the current page as `{:ok, page_number}`.
+  """
+  @spec get_page(Typo.handle()) :: {:ok, integer()}
+  def get_page(pdf) when is_handle(pdf), do: GenServer.call(pdf, :get_page)
+
+  @doc """
   Places a loaded image `image_id` onto the page at coordinates `p` with
   `options`:
     * `:height` - image height (in points).
