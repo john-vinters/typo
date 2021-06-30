@@ -92,7 +92,7 @@ defmodule Typo.PDF.Canvas do
   the current path.
   """
   @spec ellipse(Typo.handle(), Typo.xy(), number(), number()) :: :ok
-  def ellipse(pdf, {x, y}, rx, ry)
+  def ellipse(pdf, {x, y} = _p, rx, ry)
       when is_handle(pdf) and is_number(x) and is_number(y) and is_number(rx) and is_number(ry) do
     :ok = move_to(pdf, {x + rx, y})
     :ok = bezier_to(pdf, {x + rx, y + ry * @k}, {x + rx * @k, y + ry}, {x, y + ry})
