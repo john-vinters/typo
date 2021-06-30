@@ -84,4 +84,12 @@ defmodule Typo.PDF do
   """
   @spec stop(Typo.handle()) :: :ok
   def stop(pdf) when is_handle(pdf), do: GenServer.call(pdf, :stop, :infinity)
+
+  @doc """
+  Writes in-memory PDF to `filename`.  Returns `:ok` if successful,
+  `{:error, reason}` otherwise.
+  """
+  @spec write(Typo.handle(), String.t()) :: :ok | Typo.error()
+  def write(pdf, filename) when is_handle(pdf) and is_binary(filename),
+    do: GenServer.call(pdf, {:write, filename}, 30_000)
 end

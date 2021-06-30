@@ -22,7 +22,7 @@ defmodule Typo.PDF.Server do
   import Typo.Utils.Guards
   alias Typo.Font.StandardFont
   alias Typo.Image.{JPEG, PNG}
-  alias Typo.PDF.Server
+  alias Typo.PDF.{Server, Writer}
 
   @type t :: %__MODULE__{
           compression: 0..9,
@@ -245,6 +245,15 @@ defmodule Typo.PDF.Server do
   @spec handle_call(:stop, any(), Server.t()) :: {:stop, :normal, :ok, Server.t()}
   def handle_call(:stop, _from, %Server{} = state) do
     {:stop, :normal, :ok, state}
+  end
+
+  # writes in-memory PDF to file.
+  @spec handle_call({:write, String.t()}, any(), Server.t()) ::
+          {:reply, :ok | Typo.error(), Server.t(), timeout()}
+  def handle_call({:write, filename}, _from, %Server{} = state) when is_binary(filename) do
+    new_state = inc_req(state)
+    r = Writer.write(new_state, filename)
+    {:reply, r, new_state, new_state.idle_timeout}
   end
 
   # appends binary to page stream.

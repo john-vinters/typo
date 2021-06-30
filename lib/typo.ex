@@ -34,6 +34,9 @@ defmodule Typo do
   @type image_options :: [{:height, number()} | {:rotate, number()} | {:width, number()}]
   @type line_cap :: :cap_butt | :cap_round | :cap_square
   @type line_join :: :join_bevel | :join_mitre | :join_miter | :join_round
+  @type object_writer_fun ::
+          (Typo.PDF.Writer.t(), oid() -> {:ok, Typo.PDF.Writer.t()} | Typo.error())
+  @type oid :: pos_integer()
   @type op_fun :: (() -> :ok | Typo.error())
   @type page_orientation :: :portrait | :landscape | :default
   @type page_size :: page_size_a() | page_size_b() | page_size_o()
