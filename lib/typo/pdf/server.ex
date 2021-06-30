@@ -159,6 +159,27 @@ defmodule Typo.PDF.Server do
     end
   end
 
+  # sets current page number.
+  @spec handle_call({:set_page, integer()}, any(), Server.t()) ::
+          {:reply, :ok | Typo.error(), Server.t(), timeout()}
+  def handle_call({:set_page, page_number}, _from, %Server{} = state) do
+    if state.state_stack != [] do
+      {:reply, {:error, :graphcs_stack_not_empty}, state, state.idle_timeout}
+    else
+      ps = Map.get(state.pages, page_number, <<>>)
+
+      new_state =
+        %Server{
+          save_page(state)
+          | current_page: page_number,
+            stream: ps
+        }
+        |> inc_req()
+
+      {:reply, :ok, new_state, new_state.idle_timeout}
+    end
+  end
+
   # stops the server.
   @spec handle_call(:stop, any(), Server.t()) :: {:stop, :normal, :ok, Server.t()}
   def handle_call(:stop, _from, %Server{} = state) do
@@ -244,6 +265,13 @@ defmodule Typo.PDF.Server do
       JPEG.is_jpeg?(data) -> JPEG.process(data)
       true -> {:error, :unsupported_image}
     end
+  end
+
+  # saves the current page stream.
+  @spec save_page(Server.t()) :: Server.t()
+  def save_page(%Server{} = state) do
+    new_pages = Map.put(state.pages, state.current_page, state.stream)
+    %Server{state | pages: new_pages}
   end
 
   # sets media box for given page / default.

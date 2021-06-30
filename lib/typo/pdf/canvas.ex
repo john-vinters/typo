@@ -388,6 +388,19 @@ defmodule Typo.PDF.Canvas do
     do: append(pdf, n2s([limit, "M"]))
 
   @doc """
+  Sets the current page number.  The current page is svaed, and the PDF stream
+  loaded for the selected page.  Further operations on the page are appended to
+  the existing data.
+
+  NOTE: calling this function will result in `{:error, :graphics_stack_not_empty}`
+  if there are un-popped graphics states (this function can't be called from
+  within a `with_state/2` block).
+  """
+  @spec set_page(Typo.handle(), integer()) :: :ok | Typo.error()
+  def set_page(pdf, page_number) when is_handle(pdf) and is_integer(page_number),
+    do: GenServer.call(pdf, {:set_page, page_number})
+
+  @doc """
   Sets document page size.  `options` is a keyword list which can contain any of:
 
   `:page`:
