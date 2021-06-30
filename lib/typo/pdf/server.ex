@@ -87,6 +87,24 @@ defmodule Typo.PDF.Server do
     end
   end
 
+  # returns size of a loaded image.
+  @spec handle_call({:get_image_size, Typo.image_id()}, any(), Server.t()) ::
+          {:reply, {:ok, {number(), number()}} | Typo.error(), Server.t(), timeout()}
+  def handle_call({:get_image_size, image_id}, _from, %Server{} = state) do
+    new_state = inc_req(state)
+
+    case Map.get(state.images, Map.get(state.image_ids, image_id, nil)) do
+      nil ->
+        {:reply, {:error, :not_found}, new_state, new_state.idle_timeout}
+
+      %PNG{} = png ->
+        {:reply, {:ok, {png.width, png.height}}, new_state, new_state.idle_timeout}
+
+      %JPEG{} = jpeg ->
+        {:reply, {:ok, {jpeg.width, jpeg.height}}, new_state, new_state.idle_timeout}
+    end
+  end
+
   # returns the current server state (for debugging).
   @spec handle_call(:get_state, any(), Server.t()) :: {:reply, Server.t(), Server.t(), timeout()}
   def handle_call(:get_state, _from, %Server{} = state) do

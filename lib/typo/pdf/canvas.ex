@@ -113,6 +113,15 @@ defmodule Typo.PDF.Canvas do
   def fill_stroke(pdf, :even_odd) when is_handle(pdf), do: append(pdf, "b*")
 
   @doc """
+  Returns the (loaded) image `image_id` size as a `{width, height}` tuple, or
+  returns `{:error, :not_found}` if image with given `image_id` wasn't found.
+  """
+  @spec get_image_size(Typo.handle(), Typo.image_id()) ::
+          {:ok, {number(), number()}} | Typo.error()
+  def get_image_size(pdf, image_id) when is_handle(pdf) and is_image_id(image_id),
+    do: GenServer.call(pdf, {:get_image_size, image_id})
+
+  @doc """
   Appends a line segment onto the current path from the current graphics
   position to point `p`.
   """
