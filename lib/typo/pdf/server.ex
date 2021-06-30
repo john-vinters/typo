@@ -87,6 +87,14 @@ defmodule Typo.PDF.Server do
     end
   end
 
+  # returns the current compression level.
+  @spec handle_call(:get_compression, any(), Server.t()) ::
+          {:reply, {:ok, 0..9} | Typo.error(), Server.t(), timeout()}
+  def handle_call(:get_compression, _from, %Server{} = state) do
+    new_state = inc_req(state)
+    {:reply, {:ok, new_state.compression}, new_state, new_state.idle_timeout}
+  end
+
   # returns size of a loaded image.
   @spec handle_call({:get_image_size, Typo.image_id()}, any(), Server.t()) ::
           {:reply, {:ok, {number(), number()}} | Typo.error(), Server.t(), timeout()}
@@ -200,6 +208,23 @@ defmodule Typo.PDF.Server do
       %Server{state | state_stack: [state.text_state] ++ state.state_stack}
       |> inc_req()
       |> append("q")
+
+    {:noreply, new_state, new_state.idle_timeout}
+  end
+
+  # sets compression.
+  @spec handle_cast({:set_compression, 0..9}, Server.t()) :: {:noreply, Server.t(), timeout()}
+  def handle_cast({:set_compression, level}, %Server{} = state) do
+    cmp =
+      cond do
+        level < 0 -> 0
+        level > 9 -> 9
+        true -> level
+      end
+
+    new_state =
+      %Server{state | compression: cmp}
+      |> inc_req()
 
     {:noreply, new_state, new_state.idle_timeout}
   end

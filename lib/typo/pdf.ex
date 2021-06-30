@@ -21,9 +21,23 @@ defmodule Typo.PDF do
 
   import Typo.Utils.Guards
 
+  @doc """
+  Returns the current compression level (0 = None, Fastest .. 9 = Maximum,
+  Slowest).
+  """
+  @spec get_compression(Typo.handle()) :: {:ok, 0..9} | Typo.error()
+  def get_compression(pdf) when is_handle(pdf), do: GenServer.call(pdf, :get_compression)
+
   @doc false
   @spec get_state(Typo.handle()) :: Typo.PDF.Server.t()
   def get_state(pdf) when is_handle(pdf), do: GenServer.call(pdf, :get_state)
+
+  @doc """
+  Sets compression level (0 = None, Fastest .. 9 = Maximum, Slowest).
+  """
+  @spec set_compression(Typo.handle(), 0..9) :: :ok
+  def set_compression(pdf, level) when is_handle(pdf) and level in 0..9,
+    do: GenServer.cast(pdf, {:set_compression, level})
 
   @doc """
   Starts a linked PDF server process.
