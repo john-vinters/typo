@@ -442,9 +442,8 @@ defmodule Typo.PDF.Canvas do
   def set_page_size_apply(pdf, page, {_a, _b, _c, _d} = size, :portrait),
     do: set_page_size_apply(pdf, page, PageSize.portrait(size), :default)
 
-  def set_page_size_apply(pdf, page, {a, b, c, d} = size, :default)
-      when is_handle(pdf) and (page in [:current, :default] or is_integer(page)) and is_number(a) and
-             is_number(b) and is_number(c) and is_number(d),
+  def set_page_size_apply(pdf, page, {_a, _b, _c, _d} = size, :default)
+      when is_handle(pdf) and (page in [:current, :default] or is_integer(page)) and is_rect(size),
       do: GenServer.cast(pdf, {:set_page_size, page, size})
 
   @doc """

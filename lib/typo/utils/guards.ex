@@ -28,4 +28,12 @@ defmodule Typo.Utils.Guards do
   Returns `true` if `id` is an image id.
   """
   defguard is_image_id(id) when is_binary(id) or is_atom(id) or is_integer(id)
+
+  @doc """
+  Returns `true` if `this` appears to be a rectangle (a 4-tuple of numbers).
+  """
+  defguard is_rect(this)
+           when is_tuple(this) and tuple_size(this) == 4 and is_number(elem(this, 0)) and
+                  is_number(elem(this, 1)) and is_number(elem(this, 2)) and
+                  is_number(elem(this, 3))
 end

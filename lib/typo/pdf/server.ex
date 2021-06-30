@@ -184,7 +184,8 @@ defmodule Typo.PDF.Server do
   # sets current page number.
   @spec handle_call({:set_page, integer()}, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
-  def handle_call({:set_page, page_number}, _from, %Server{state_stack: []} = state) do
+  def handle_call({:set_page, page_number}, _from, %Server{state_stack: []} = state)
+      when is_integer(page_number) do
     ps = Map.get(state.pages, page_number, <<>>)
 
     new_state =
@@ -198,7 +199,8 @@ defmodule Typo.PDF.Server do
     {:reply, :ok, new_state, new_state.idle_timeout}
   end
 
-  def handle_call({:set_page, _page_number}, _from, %Server{state_stack: [_h | _t]} = state) do
+  def handle_call({:set_page, page_number}, _from, %Server{state_stack: [_h | _t]} = state)
+      when is_integer(page_number) do
     new_state = inc_req(state)
     {:reply, {:error, :graphics_stack_not_empty}, new_state, new_state.idle_timeout}
   end
@@ -255,7 +257,8 @@ defmodule Typo.PDF.Server do
            {number(), number(), number(), number()}},
           Server.t()
         ) :: {:noreply, Server.t(), timeout()}
-  def handle_cast({:set_page_size, page, {_a, _b, _c, _d} = size}, %Server{} = state) do
+  def handle_cast({:set_page_size, page, {_a, _b, _c, _d} = size}, %Server{} = state)
+      when (is_integer(page) or page in [:current, :default]) and is_rect(size) do
     new_state =
       set_media_box(state, page, size)
       |> inc_req()
