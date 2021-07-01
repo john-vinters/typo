@@ -61,10 +61,10 @@ defmodule Typo.PDF.Writer do
   otherwise.  After a successful write, the `oid` field of the writer contains
   the oid of the written object id.
   """
-  @spec new_object(Writer.t(), nil | atom() | tuple()) ::
+  @spec new_object(Writer.t(), nil | atom() | tuple(), nil | Typo.oid()) ::
           {:ok, Writer.t(), Typo.oid()} | Typo.error()
-  def new_object(%Writer{} = w, type) do
-    with {:ok, w, oid} <- register(w, nil, type),
+  def new_object(%Writer{} = w, type, oid \\ nil) do
+    with {:ok, w, oid} <- register(w, oid, type),
          {:ok, w} <- writeln(w, "#{oid} 0 obj"),
          do: {:ok, w, oid}
   end
@@ -73,10 +73,10 @@ defmodule Typo.PDF.Writer do
   Calls `new_object/2`, runs a function to generate the object output and then
   calls `end_object/1`.
   """
-  @spec object(Writer.t(), nil | atom() | tuple(), Typo.object_writer_fun()) ::
+  @spec object(Writer.t(), nil | atom() | tuple(), Typo.object_writer_fun(), nil | Typo.oid()) ::
           {:ok, Writer.t()} | Typo.error()
-  def object(%Writer{} = w, type, fun) when is_function(fun) do
-    with {:ok, w, oid} <- new_object(w, type),
+  def object(%Writer{} = w, type, fun, oid \\ nil) when is_function(fun) do
+    with {:ok, w, oid} <- new_object(w, type, oid),
          {:ok, w} <- fun.(w, oid),
          do: end_object(w)
   end
@@ -145,6 +145,7 @@ defmodule Typo.PDF.Writer do
          {:ok, w} <- Core.out_page_root(w, state),
          {:ok, w} <- Core.out_metadata(w, state),
          {:ok, w} <- Core.out_catalog(w, state),
+         {:ok, w} <- Core.out_xref_trailer(w, state),
          :ok <- File.close(w.file) do
       :ok
     else

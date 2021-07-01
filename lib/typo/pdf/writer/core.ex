@@ -19,10 +19,10 @@ defmodule Typo.PDF.Writer.Core do
   PDF core structure writer.
   """
 
-  import Typo.PDF.Writer, only: [object: 3, ptr: 2, utf16be: 1, writeln: 2]
+  import Typo.PDF.Writer, only: [object: 3, object: 4, ptr: 2, utf16be: 1, writeln: 2]
   import Typo.PDF.Writer.Objects, only: [out_dict: 2]
   import Typo.Utils.Guards
-  alias Typo.Utils.Zlib
+  alias Typo.Utils.{Strings, Zlib}
   alias Typo.PDF.{Server, Writer}
 
   @fallback_pagesize {0, 0, 595, 842}
@@ -126,16 +126,21 @@ defmodule Typo.PDF.Writer.Core do
         ptr(w, {:page, page})
       end)
 
-    object(w, Map.get(w.ptr, :page_root), fn %Writer{} = w, _oid ->
-      r = %{
-        "Type" => "Pages",
-        "Count" => Enum.count(state.pages),
-        "MediaBox" => [a, b, c, d],
-        "Kids" => pages
-      }
+    object(
+      w,
+      :page_root,
+      fn %Writer{} = w, _oid ->
+        r = %{
+          "Type" => "Pages",
+          "Count" => Enum.count(state.pages),
+          "MediaBox" => [a, b, c, d],
+          "Kids" => pages
+        }
 
-      out_dict(w, r)
-    end)
+        out_dict(w, r)
+      end,
+      Map.get(w.ptr, :page_root)
+    )
   end
 
   # outputs individual page stream.
@@ -197,5 +202,36 @@ defmodule Typo.PDF.Writer.Core do
       resources = %{"Fonts" => w.fonts, "ProcSet" => proc_set, "XObject" => w.xobjects}
       out_dict(w, resources)
     end)
+  end
+
+  @doc """
+  Outputs cross-reference trailer.
+  """
+  @spec out_xref_trailer(Writer.t(), Server.t()) :: {:ok, Writer.t()} | Typo.error()
+  def out_xref_trailer(%Writer{file: f} = w, %Server{} = _state) do
+    {:ok, xref} = :file.position(f, :cur)
+
+    objs =
+      w.offsets
+      |> Map.keys()
+      |> Enum.sort()
+      |> Enum.reduce("0000000000 65535 f", fn oid, acc ->
+        offset = Map.get(w.offsets, oid)
+        acc <> "\r\n#{Strings.zero_pad(offset, 10)} 00000 n"
+      end)
+
+    with {:ok, w} <- writeln(w, "xref"),
+         {:ok, w} <- writeln(w, "0 #{w.oid}"),
+         {:ok, w} <- writeln(w, objs),
+         {:ok, w} <- writeln(w, "trailer"),
+         {:ok, w} <-
+           out_dict(w, %{
+             "Size" => w.oid,
+             "Root" => ptr(w, :catalog),
+             "Info" => ptr(w, :document_info)
+           }),
+         {:ok, w} <- writeln(w, "startxref"),
+         {:ok, w} <- writeln(w, Integer.to_string(xref)),
+         do: writeln(w, "%%EOF")
   end
 end
