@@ -66,6 +66,12 @@ defmodule Typo.PDF.Writer.Objects do
   defp out_value(%Writer{} = w, {:ptr, value}, _indent) when is_binary(value),
     do: write(w, value)
 
+  defp out_value(%Writer{} = w, {:raw, value}, _indent) when is_number(value) or is_binary(value),
+    do: write(w, Strings.n2s(value))
+
+  defp out_value(%Writer{} = w, {:utf16be, value}, _indent) when is_binary(value),
+    do: write(w, Strings.utf16be_hex(value, bracket: true))
+
   defp out_value(%Writer{} = w, value, indent) when is_list(value) do
     with {:ok, %Writer{} = w} <- write(w, "[ "),
          {:ok, %Writer{} = w} <-
@@ -83,9 +89,6 @@ defmodule Typo.PDF.Writer.Objects do
          {:ok, %Writer{} = w} <- write(w, "]"),
          do: {:ok, w}
   end
-
-  defp out_value(%Writer{} = w, {:utf16be, value}, _indent) when is_binary(value),
-    do: write(w, Strings.utf16be_hex(value, bracket: true))
 
   defp out_value(%Writer{} = w, value, indent) when is_map(value),
     do: out_dict(w, value, indent)
