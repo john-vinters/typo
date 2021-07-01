@@ -175,8 +175,11 @@ defmodule Typo.Utils.Strings do
   Left-pads the given string with zeroes until it is at least `length`.
   """
   @spec zero_pad(String.t(), non_neg_integer()) :: String.t()
-  def zero_pad(this, length) when length < byte_size(this),
+  def zero_pad(<<this::binary>>, length) when length > byte_size(this),
     do: zero_pad(<<?0::8, this::binary>>, length)
 
-  def zero_pad(this, _length), do: this
+  def zero_pad(<<this::binary>>, _length), do: this
+
+  def zero_pad(this, length) when is_number(this) and is_integer(length),
+    do: zero_pad(n2s(this), length)
 end
