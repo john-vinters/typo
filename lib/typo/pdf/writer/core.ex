@@ -82,6 +82,30 @@ defmodule Typo.PDF.Writer.Core do
     end
   end
 
+  @doc """
+  Outputs page root.  The OID must have been previously allocated!
+  """
+  @spec out_page_root(Writer.t(), Server.t()) :: {:ok, Writer.t()} | Typo.error()
+  def out_page_root(%Writer{} = w, %Server{} = state) do
+    {a, b, c, d} = get_page_geometry(state, :default)
+
+    pages =
+      Enum.map(w.page_list, fn page ->
+        ptr(w, {:page, page})
+      end)
+
+    object(w, Map.get(w.ptr, :page_root), fn %Writer{} = w, _oid ->
+      r = %{
+        "Type" => "Pages",
+        "Count" => Enum.count(state.pages),
+        "MediaBox" => [a, b, c, d],
+        "Kids" => pages
+      }
+
+      out_dict(w, r)
+    end)
+  end
+
   # outputs individual page stream.
   @spec out_page_stream(Writer.t(), Server.t(), binary(), {:page_stream, integer()}) ::
           {:ok, Writer.t()} | Typo.error()
