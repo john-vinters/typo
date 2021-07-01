@@ -19,7 +19,7 @@ defmodule Typo.PDF.Writer.Core do
   PDF core structure writer.
   """
 
-  import Typo.PDF.Writer, only: [object: 3, ptr: 2, writeln: 2]
+  import Typo.PDF.Writer, only: [object: 3, ptr: 2, utf16be: 1, writeln: 2]
   import Typo.PDF.Writer.Objects, only: [out_dict: 2]
   import Typo.Utils.Guards
   alias Typo.Utils.Zlib
@@ -54,6 +54,22 @@ defmodule Typo.PDF.Writer.Core do
          {:ok, w} <- writeln(w, <<?%::8, 255::8, 255::8, 255::8>>),
          {:ok, w} <- writeln(w, "%generated using Typo PDF library #{Typo.version()}"),
          do: writeln(w, "")
+  end
+
+  @doc """
+  Outputs document metadata.
+  """
+  @spec out_metadata(Writer.t(), Server.t()) :: {:ok, Writer.t()} | Typo.error()
+  def out_metadata(%Writer{} = w, %Server{} = state) do
+    md =
+      Enum.map(state.metadata, fn {name, str} ->
+        {String.capitalize("#{name}"), utf16be(str)}
+      end)
+      |> Enum.into(%{})
+
+    object(w, :document_info, fn %Writer{} = w, _oid ->
+      out_dict(w, md)
+    end)
   end
 
   @doc """

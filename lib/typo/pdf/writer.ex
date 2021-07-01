@@ -143,6 +143,7 @@ defmodule Typo.PDF.Writer do
          {:ok, w} <- Core.out_resources(w, state),
          {:ok, w} <- Core.out_pages(w, state),
          {:ok, w} <- Core.out_page_root(w, state),
+         {:ok, w} <- Core.out_metadata(w, state),
          :ok <- File.close(w.file) do
       :ok
     else
