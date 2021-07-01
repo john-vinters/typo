@@ -30,22 +30,22 @@ defmodule Typo.PDF.Writer do
   @type t :: %__MODULE__{
           compression: 0..9,
           file: nil | file(),
-          font_list: [{binary(), binary()}],
+          fonts: %{},
           offsets: map(),
           oid: pos_integer(),
           page_list: [integer()],
           ptr: map(),
-          xobject_list: [{binary(), binary()}]
+          xobjects: map()
         }
 
   defstruct compression: 5,
             file: nil,
-            font_list: [],
+            fonts: %{},
             offsets: %{},
             oid: 1,
             page_list: [],
             ptr: %{},
-            xobject_list: []
+            xobjects: %{}
 
   @doc """
   Outputs "endobj" plus two CRLFs.
@@ -79,6 +79,15 @@ defmodule Typo.PDF.Writer do
     with {:ok, w, oid} <- new_object(w, type),
          {:ok, w} <- fun.(w, oid),
          do: end_object(w)
+  end
+
+  @doc """
+  Returns an indirect reference in a suitable form for inclusion in a dict.
+  """
+  @spec ptr(Writer.t(), atom() | tuple()) :: {:ptr, binary()}
+  def ptr(%Writer{} = w, type) do
+    oid = Map.get(w.ptr, type)
+    {:ptr, "#{oid} 0 R"}
   end
 
   @doc """
@@ -125,6 +134,7 @@ defmodule Typo.PDF.Writer do
   defp write_pdf_apply(%Writer{} = w, %Server{} = state) do
     with {:ok, w, _root_oid} <- register(w, nil, :page_root),
          {:ok, w} <- Core.out_header(w, state),
+         {:ok, w} <- Core.out_resources(w, state),
          :ok <- File.close(w.file) do
       :ok
     else

@@ -19,7 +19,8 @@ defmodule Typo.PDF.Writer.Core do
   PDF core structure writer.
   """
 
-  import Typo.PDF.Writer, only: [writeln: 2]
+  import Typo.PDF.Writer, only: [object: 3, writeln: 2]
+  import Typo.PDF.Writer.Objects, only: [out_dict: 2]
   alias Typo.PDF.{Server, Writer}
 
   @doc """
@@ -31,5 +32,17 @@ defmodule Typo.PDF.Writer.Core do
          {:ok, w} <- writeln(w, <<?%::8, 255::8, 255::8, 255::8>>),
          {:ok, w} <- writeln(w, "%generated using Typo PDF library #{Typo.version()}"),
          do: writeln(w, "")
+  end
+
+  @doc """
+  Outputs PDF resources object.
+  """
+  @spec out_resources(Writer.t(), Server.t()) :: {:ok, Writer.t()} | Typo.error()
+  def out_resources(%Writer{} = w, %Server{} = _state) do
+    object(w, :resources, fn %Writer{} = w, _oid ->
+      proc_set = ["PDF", "Text", "ImageB", "ImageC", "ImageI"]
+      resources = %{"Fonts" => w.fonts, "ProcSet" => proc_set, "XObject" => w.xobjects}
+      out_dict(w, resources)
+    end)
   end
 end
