@@ -78,7 +78,8 @@ defmodule Typo.PDF.Writer.Core do
   @spec out_metadata(Writer.t(), Server.t()) :: {:ok, Writer.t()} | Typo.error()
   def out_metadata(%Writer{} = w, %Server{} = state) do
     md =
-      Enum.map(state.metadata, fn {name, str} ->
+      state.metadata
+      |> Enum.map(fn {name, str} ->
         {String.capitalize("#{name}"), utf16be(str)}
       end)
       |> Enum.into(%{})
