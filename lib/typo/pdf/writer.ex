@@ -101,6 +101,15 @@ defmodule Typo.PDF.Writer do
   defp register_oid(%Writer{} = w, oid), do: {w, oid}
 
   @doc """
+  Writes the given binary to the PDF file.
+  Returns `{:ok, writer}` if successful, `{:error, reason}` otherwise.
+  """
+  @spec write(Writer.t(), binary()) :: {:ok, Writer.t()} | Typo.error()
+  def write(%Writer{file: f} = w, <<data::binary>>) do
+    with :ok <- IO.binwrite(f, data), do: {:ok, w}
+  end
+
+  @doc """
   Writes in-memory PDF document to disk, returning either `:ok` if successful,
   or `{:error, reason}` otherwise.
   """
