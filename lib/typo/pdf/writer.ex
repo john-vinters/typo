@@ -135,6 +135,7 @@ defmodule Typo.PDF.Writer do
     with {:ok, w, _root_oid} <- register(w, nil, :page_root),
          {:ok, w} <- Core.out_header(w, state),
          {:ok, w} <- Core.out_resources(w, state),
+         {:ok, w} <- Core.out_pages(w, state),
          :ok <- File.close(w.file) do
       :ok
     else
