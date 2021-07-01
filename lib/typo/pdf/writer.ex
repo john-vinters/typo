@@ -104,16 +104,16 @@ defmodule Typo.PDF.Writer do
   Writes in-memory PDF document to disk, returning either `:ok` if successful,
   or `{:error, reason}` otherwise.
   """
-  @spec write(Server.t(), String.t()) :: :ok | Typo.error()
-  def write(%Server{compression: c} = state, filename) when is_binary(filename) do
+  @spec write_pdf(Server.t(), String.t()) :: :ok | Typo.error()
+  def write_pdf(%Server{compression: c} = state, filename) when is_binary(filename) do
     case File.open(filename, [:binary, :write, {:delayed_write, @buffer, 10000}]) do
-      {:ok, file} -> write_apply(%Writer{compression: c, file: file, oid: 1}, state)
+      {:ok, file} -> write_pdf_apply(%Writer{compression: c, file: file, oid: 1}, state)
       {:error, _} = err -> err
     end
   end
 
-  @spec write_apply(Writer.t(), Server.t()) :: :ok | Typo.error()
-  def write_apply(%Writer{} = w, %Server{} = state) do
+  @spec write_pdf_apply(Writer.t(), Server.t()) :: :ok | Typo.error()
+  defp write_pdf_apply(%Writer{} = w, %Server{} = state) do
     with {:ok, w, _root_oid} <- register(w, nil, :page_root),
          {:ok, w} <- Core.out_header(w, state),
          :ok <- File.close(w.file) do
