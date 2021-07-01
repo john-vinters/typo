@@ -31,9 +31,9 @@ defmodule Typo.PDF.Writer.Objects do
   def out_dict(%Writer{} = w, dict, indent \\ 0) when is_map(dict) do
     with {:ok, w} <- writeln(w, "<<"),
          {:ok, w} <- out_dict_kv(w, dict, indent + 3),
-         {:ok, w} <- write(w, String.duplicate(" ", indent)),
-         {:ok, w} <- writeln(w, ">>"),
-         do: {:ok, w}
+         {:ok, w} <- write(w, String.duplicate(" ", indent)) do
+      if indent > 0, do: write(w, ">>"), else: writeln(w, ">>")
+    end
   end
 
   @spec out_dict_kv(Writer.t(), map(), non_neg_integer()) :: {:ok, Writer.t()} | Typo.error()
@@ -45,6 +45,7 @@ defmodule Typo.PDF.Writer.Objects do
                {:ok, w} <- write(w, Strings.name(key)),
                {:ok, w} <- write(w, " "),
                {:ok, w} <- out_value(w, value, indent),
+               {:ok, w} <- writeln(w, ""),
                do: {:ok, w}
 
         other ->
@@ -79,7 +80,7 @@ defmodule Typo.PDF.Writer.Objects do
                  other
              end
            end),
-         {:ok, %Writer{} = w} <- writeln(w, "]"),
+         {:ok, %Writer{} = w} <- write(w, "]"),
          do: {:ok, w}
   end
 
