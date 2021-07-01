@@ -143,8 +143,6 @@ defmodule Typo.PDF.Writer do
     with :ok <- IO.binwrite(f, data),
          :ok <- IO.binwrite(f, <<13::8, 10::8>>) do
       {:ok, w}
-    else
-      {:error, _reason} = err -> err
     end
   end
 end
