@@ -22,10 +22,23 @@ defmodule Typo.PDF.Writer.Core do
   import Typo.PDF.Writer, only: [object: 3, object: 4, ptr: 2, utf16be: 1, writeln: 2]
   import Typo.PDF.Writer.Objects, only: [out_dict: 2]
   import Typo.Utils.Guards
-  alias Typo.Utils.{Strings, Zlib}
+  import Typo.Utils.Strings, only: [zero_pad: 2]
+  alias Typo.Utils.Zlib
   alias Typo.PDF.{Server, Writer}
 
   @fallback_pagesize {0, 0, 595, 842}
+
+  @spec generate_creation_date :: {:date, String.t()}
+  defp generate_creation_date do
+    {{y, m, d}, {h, mn, s}} = :erlang.universaltime()
+    year = zero_pad(y, 4)
+    month = zero_pad(m, 2)
+    day = zero_pad(d, 2)
+    hour = zero_pad(h, 2)
+    min = zero_pad(mn, 2)
+    sec = zero_pad(s, 2)
+    {:date, "(D:#{year}#{month}#{day}#{hour}#{min}#{sec}Z)"}
+  end
 
   # returns page geometry for given page.
   @spec get_page_geometry(Server.t(), :default | integer()) :: Typo.rectangle()
@@ -79,8 +92,13 @@ defmodule Typo.PDF.Writer.Core do
   def out_metadata(%Writer{} = w, %Server{} = state) do
     md =
       state.metadata
-      |> Enum.map(fn {name, str} ->
-        {String.capitalize("#{name}"), utf16be(str)}
+      |> Map.put("CreationDate", generate_creation_date())
+      |> Enum.map(fn
+        {name, str} when is_binary(str) ->
+          {name, utf16be(str)}
+
+        {name, {:date, date}} ->
+          {name, {:raw, date}}
       end)
       |> Enum.into(%{})
 
@@ -218,7 +236,7 @@ defmodule Typo.PDF.Writer.Core do
       |> Enum.sort()
       |> Enum.reduce("0000000000 65535 f", fn oid, acc ->
         offset = Map.get(w.offsets, oid)
-        acc <> "\r\n#{Strings.zero_pad(offset, 10)} 00000 n"
+        acc <> "\r\n#{zero_pad(offset, 10)} 00000 n"
       end)
 
     with {:ok, w} <- writeln(w, "xref"),
