@@ -110,6 +110,12 @@ defmodule Typo.PDF.Writer do
   defp register_oid(%Writer{} = w, oid), do: {w, oid}
 
   @doc """
+  Formats binary as UTF-16BE in form suitable for dict insertion.
+  """
+  @spec utf16be(binary()) :: {:utf16be, binary()}
+  def utf16be(this) when is_binary(this), do: {:utf16be, this}
+
+  @doc """
   Writes the given binary to the PDF file.
   Returns `{:ok, writer}` if successful, `{:error, reason}` otherwise.
   """

@@ -84,6 +84,9 @@ defmodule Typo.PDF.Writer.Objects do
          do: {:ok, w}
   end
 
+  defp out_value(%Writer{} = w, {:utf16be, value}, _indent) when is_binary(value),
+    do: write(w, Strings.utf16be_hex(value, bracket: true))
+
   defp out_value(%Writer{} = w, value, indent) when is_map(value),
     do: out_dict(w, value, indent)
 end
