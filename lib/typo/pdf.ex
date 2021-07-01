@@ -30,19 +30,21 @@ defmodule Typo.PDF do
 
   @doc """
   Gets document metadata associated with `key`, which should be one of:
-    * `:author`
-    * `:creator`
-    * `:keywords`
-    * `:producer`
-    * `:subject`
-    * `:title`
+    * `"Author"`
+    * `"Creator"`
+    * `"Keywords"`
+    * `"Producer"`
+    * `"Subject"`
+    * `"Title"`
 
   Returns `{:ok, metadata_value}` if successful, or `{:error, :not_found}` if
   no metadata set for given `key`.
   """
-  @spec get_metadata(Typo.handle(), atom()) :: {:ok, String.t()} | Typo.error()
-  def get_metadata(pdf, key) when is_handle(pdf) and is_atom(key),
-    do: GenServer.call(pdf, {:get_metadata, key})
+  @spec get_metadata(Typo.handle(), String.t()) :: {:ok, String.t()} | Typo.error()
+  def get_metadata(pdf, key)
+      when is_handle(pdf) and is_binary(key) and
+             key in ["Author", "Creator", "Keywords", "Producer", "Subject", "Title"],
+      do: GenServer.call(pdf, {:get_metadata, key})
 
   @doc false
   @spec get_state(Typo.handle()) :: Typo.PDF.Server.t()
