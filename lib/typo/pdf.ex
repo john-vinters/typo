@@ -58,18 +58,20 @@ defmodule Typo.PDF do
   @doc """
   Sets document metadata.
   `key` should be one of:
-    * `:author`
-    * `:creator`
-    * `:keywords`
-    * `:producer`
-    * `:subject`
-    * `:title`
+    * `"Author"`
+    * `"Creator"`
+    * `"Keywords"`
+    * `"Producer"`
+    * `"Subject"`
+    * `"Title"`
 
   `value` should be a string.
   """
-  @spec set_metadata(Typo.handle(), atom(), String.t()) :: :ok
-  def set_metadata(pdf, key, value) when is_handle(pdf) and is_atom(key) and is_binary(value),
-    do: GenServer.cast(pdf, {:set_metadata, key, value})
+  @spec set_metadata(Typo.handle(), String.t(), String.t()) :: :ok
+  def set_metadata(pdf, key, value)
+      when is_handle(pdf) and is_binary(key) and is_binary(value) and
+             key in ["Author", "Creator", "Keywords", "Producer", "Subject", "Title"],
+      do: GenServer.cast(pdf, {:set_metadata, key, value})
 
   @doc """
   Starts a linked PDF server process.

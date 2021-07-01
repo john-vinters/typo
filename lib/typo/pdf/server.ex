@@ -285,10 +285,10 @@ defmodule Typo.PDF.Server do
   end
 
   # sets document metadata.
-  @spec handle_cast({:set_metadata, atom(), String.t()}, Server.t()) ::
+  @spec handle_cast({:set_metadata, String.t(), String.t()}, Server.t()) ::
           {:noreply, Server.t(), timeout()}
   def handle_cast({:set_metadata, key, value}, %Server{} = state)
-      when is_atom(key) and is_binary(value) do
+      when is_binary(key) and is_binary(value) do
     new_state =
       %Server{state | metadata: Map.put(state.metadata, key, value)}
       |> inc_req()
@@ -328,7 +328,7 @@ defmodule Typo.PDF.Server do
     new_state =
       %Server{
         state
-        | metadata: Map.put(state.metadata, :creator, "Typo PDF Library v#{Typo.version()}"),
+        | metadata: Map.put(state.metadata, "Creator", "Typo PDF Library v#{Typo.version()}"),
           started: :erlang.localtime()
       }
       |> register_standard_fonts()
