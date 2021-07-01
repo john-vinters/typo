@@ -46,6 +46,22 @@ defmodule Typo.PDF.Writer.Core do
   end
 
   @doc """
+  Outputs PDF catalog.
+  """
+  @spec out_catalog(Writer.t(), Server.t()) :: {:ok, Writer.t()} | Typo.error()
+  def out_catalog(%Writer{} = w, %Server{} = _state) do
+    catalog = %{
+      "Type" => "Catalog",
+      "Pages" => ptr(w, :page_root),
+      "PageMode" => "UseNone"
+    }
+
+    object(w, :catalog, fn %Writer{} = w, _oid ->
+      out_dict(w, catalog)
+    end)
+  end
+
+  @doc """
   Outputs PDF header.
   """
   @spec out_header(Writer.t(), Server.t()) :: {:ok, Writer.t()} | Typo.error()
