@@ -251,7 +251,7 @@ defmodule Typo.PDF.Server do
   @spec handle_call({:write, String.t()}, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
   def handle_call({:write, filename}, _from, %Server{} = state) when is_binary(filename) do
-    new_state = inc_req(state)
+    new_state = inc_req(save_page(state))
     r = Writer.write_pdf(new_state, filename)
     {:reply, r, new_state, new_state.idle_timeout}
   end
