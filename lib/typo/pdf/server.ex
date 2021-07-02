@@ -147,9 +147,9 @@ defmodule Typo.PDF.Server do
   end
 
   # returns metadata.
-  @spec handle_call({:get_metadata, atom()}, any(), Server.t()) ::
+  @spec handle_call({:get_metadata, String.t()}, any(), Server.t()) ::
           {:reply, {:ok, String.t()} | Typo.error(), Server.t(), timeout()}
-  def handle_call({:get_metadata, key}, _from, %Server{} = state) when is_atom(key) do
+  def handle_call({:get_metadata, key}, _from, %Server{} = state) when is_binary(key) do
     new_state = inc_req(state)
 
     case Map.get(new_state.metadata, key) do
