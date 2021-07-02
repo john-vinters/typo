@@ -296,7 +296,11 @@ defmodule Typo.PDF.Server do
   # sets current page number.
   @spec handle_call({:set_page, integer()}, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
-  def handle_call({:set_page, page_number}, _from, %Server{state_stack: []} = state)
+  def handle_call(
+        {:set_page, page_number},
+        _from,
+        %Server{in_text: false, state_stack: []} = state
+      )
       when is_integer(page_number) do
     ps = Map.get(state.pages, page_number, <<>>)
 
@@ -309,6 +313,12 @@ defmodule Typo.PDF.Server do
       |> inc_req()
 
     {:reply, :ok, new_state, new_state.idle_timeout}
+  end
+
+  def handle_call({:set_page, page_number}, _from, %Server{in_text: true} = state)
+      when is_integer(page_number) do
+    new_state = inc_req(state)
+    {:reply, {:error, :in_text_block}, new_state, new_state.idle_timeout}
   end
 
   def handle_call({:set_page, page_number}, _from, %Server{state_stack: [_h | _t]} = state)
