@@ -308,7 +308,9 @@ defmodule Typo.PDF.Server do
       %Server{
         save_page(state)
         | current_page: page_number,
-          stream: ps
+          in_text: false,
+          stream: ps,
+          text_state: %{}
       }
       |> inc_req()
 
