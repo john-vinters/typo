@@ -20,6 +20,7 @@ defmodule Typo.PDF.Server do
   """
 
   import Typo.Utils.Guards
+  import Typo.Utils.Strings, only: [n2s: 1]
   alias Typo.Font.StandardFont
   alias Typo.Image.{JPEG, PNG}
   alias Typo.PDF.{Server, Writer}
@@ -29,6 +30,7 @@ defmodule Typo.PDF.Server do
           current_page: integer(),
           font_id: pos_integer(),
           font_ids: map(),
+          font_usage: map(),
           fonts: map(),
           geometry: map(),
           hibernations: non_neg_integer(),
@@ -51,6 +53,7 @@ defmodule Typo.PDF.Server do
             current_page: 1,
             font_id: 1,
             font_ids: %{},
+            font_usage: %{},
             fonts: %{},
             geometry: %{:default => %{:media_box => {0, 0, 595, 842}}},
             hibernations: 0,
@@ -217,6 +220,79 @@ defmodule Typo.PDF.Server do
     end
   end
 
+  # selects font.
+  @spec handle_call({:select_font, Typo.font_id(), number()}, any(), Server.t()) ::
+          {:reply, :ok | Typo.error(), Server.t(), timeout()}
+  def handle_call({:select_font, font_id, size}, _from, %Server{in_text: true} = state) do
+    new_state = inc_req(state)
+
+    with fid when is_integer(fid) <- Map.get(state.font_ids, font_id, :not_found) do
+      leading = size * 1.2
+
+      ns =
+        new_state
+        |> append(n2s(["/F#{fid}", size, "Tf"]))
+        |> append(n2s([0, "Tc", leading, "TL", 0, "Ts", 0, "Tw"]))
+
+      new_fu = Map.put(ns.font_usage, fid, true)
+
+      new_ts =
+        ns.text_state
+        |> Map.put(:font, fid)
+        |> Map.put(:size, size)
+        |> Map.put(:character_space, 0)
+        |> Map.put(:leading, leading)
+        |> Map.put(:rise, 0)
+        |> Map.put(:word_space, 0)
+
+      new_state = %Server{ns | font_usage: new_fu, text_state: new_ts}
+      {:reply, :ok, new_state, new_state.idle_timeout}
+    else
+      :not_found -> {:reply, {:error, :not_found}, new_state, new_state.idle_timeout}
+    end
+  end
+
+  def handle_call({:select_font, _font_id, _size}, _from, %Server{in_text: false} = state) do
+    new_state = inc_req(state)
+    {:reply, {:error, :not_in_text_block}, new_state, new_state.idle_timeout()}
+  end
+
+  # sets character spacing.
+  @spec handle_call({:set_character_space, number()}, any(), Server.t()) ::
+          {:reply, :ok | Typo.error(), Server.t(), timeout()}
+  def handle_call({:set_character_space, spacing}, _from, %Server{in_text: true} = state)
+      when is_number(spacing) do
+    new_state =
+      %Server{state | text_state: Map.put(state.text_state, :character_space, spacing)}
+      |> inc_req()
+      |> append(n2s([spacing, "Tc"]))
+
+    {:reply, :ok, new_state, new_state.idle_timeout}
+  end
+
+  def handle_call({:set_character_space, _spacing}, _from, %Server{in_text: false} = state) do
+    new_state = inc_req(state)
+    {:reply, {:error, :not_in_text_block}, new_state, new_state.idle_timeout()}
+  end
+
+  # sets leading.
+  @spec handle_call({:set_leading, number()}, any(), Server.t()) ::
+          {:reply, :ok | Typo.error(), Server.t(), timeout()}
+  def handle_call({:set_leading, leading}, _from, %Server{in_text: true} = state)
+      when is_number(leading) do
+    new_state =
+      %Server{state | text_state: Map.put(state.text_state, :leading, leading)}
+      |> inc_req()
+      |> append(n2s([leading, "TL"]))
+
+    {:reply, :ok, new_state, new_state.idle_timeout}
+  end
+
+  def handle_call({:set_leading, _leading}, _from, %Server{in_text: false} = state) do
+    new_state = inc_req(state)
+    {:reply, {:error, :not_in_text_block}, new_state, new_state.idle_timeout}
+  end
+
   # sets current page number.
   @spec handle_call({:set_page, integer()}, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
@@ -239,6 +315,42 @@ defmodule Typo.PDF.Server do
       when is_integer(page_number) do
     new_state = inc_req(state)
     {:reply, {:error, :graphics_stack_not_empty}, new_state, new_state.idle_timeout}
+  end
+
+  # sets rise.
+  @spec handle_call({:set_rise, number()}, any(), Server.t()) ::
+          {:reply, :ok | Typo.error(), Server.t(), timeout()}
+  def handle_call({:set_rise, rise}, _from, %Server{in_text: true} = state)
+      when is_number(rise) do
+    new_state =
+      %Server{state | text_state: Map.put(state.text_state, :rise, rise)}
+      |> inc_req()
+      |> append(n2s([rise, "Tr"]))
+
+    {:reply, :ok, new_state, new_state.idle_timeout}
+  end
+
+  def handle_call({:set_rise, _rise}, _from, %Server{in_text: false} = state) do
+    new_state = inc_req(state)
+    {:reply, {:error, :not_in_text_block}, new_state, new_state.idle_timeout}
+  end
+
+  # sets word spacing.
+  @spec handle_call({:set_word_space, number()}, any(), Server.t()) ::
+          {:reply, :ok | Typo.error(), Server.t(), timeout()}
+  def handle_call({:set_word_space, spacing}, _from, %Server{in_text: true} = state)
+      when is_number(spacing) do
+    new_state =
+      %Server{state | text_state: Map.put(state.text_state, :word_space, spacing)}
+      |> inc_req()
+      |> append(n2s([spacing, "Tw"]))
+
+    {:reply, :ok, new_state, new_state.idle_timeout}
+  end
+
+  def handle_call({:set_word_space, _spacing}, _from, %Server{in_text: false} = state) do
+    new_state = inc_req(state)
+    {:reply, {:error, :not_in_text_block}, new_state, new_state.idle_timeout()}
   end
 
   # stops the server.

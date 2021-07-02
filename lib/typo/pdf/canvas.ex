@@ -240,6 +240,16 @@ defmodule Typo.PDF.Canvas do
   def place_image(pdf, image_id) when is_handle(pdf) and is_image_id(image_id),
     do: GenServer.call(pdf, {:place_image, image_id})
 
+  # restricts given value to 0.0..1.0
+  @spec range(number()) :: number()
+  defp range(this) when is_number(this) do
+    cond do
+      this < 0.0 -> 0.0
+      this > 1.0 -> 1.0
+      true -> this
+    end
+  end
+
   @doc """
   Draws a rectangle with lower left corner `p`, with dimensions `width` by
   `height`.
@@ -268,15 +278,37 @@ defmodule Typo.PDF.Canvas do
   @spec save_state(Typo.handle()) :: :ok
   def save_state(pdf) when is_handle(pdf), do: GenServer.cast(pdf, :save_graphics_state)
 
-  # restricts given value to 0.0..1.0
-  @spec range(number()) :: number()
-  defp range(this) when is_number(this) do
-    cond do
-      this < 0.0 -> 0.0
-      this > 1.0 -> 1.0
-      true -> this
-    end
-  end
+  @doc """
+  Selects a (previously loaded or standard) font `font_id` at the specified `size`.
+  NOTE: must be called from within a `with_text/2` block.
+
+  The core 14 fonts which are always available have the following font ids:
+
+    * `"Courier"`, `"Courier-Bold"`, `"Courier-BoldOblique"` and `"Courier-Oblique"`.
+    * `"Helvetica"`, `"Helvetica-Bold"`, `"Helvetica-BoldOblique"` and `"Helvetica-Oblique"`.
+    * `"Symbol"`.
+    * `"Times-Roman"`, `"Times-Bold"`, `"Times-BoldItalic"` and `"Times-Italic"`.
+    * `"ZapfDingbats"`.
+
+  Selecting a font resets the text state to the following:
+    * `character_space` is set to `0`.
+    * `horizontal_scale` is set to `100`.
+    * `leading` is set to 1.2 x `size`.
+    * `rise` is set to `0`.
+    * `word_space` is set to `0`.
+  """
+  @spec select_font(Typo.handle(), Typo.font_id(), number()) :: :ok | Typo.error()
+  def select_font(pdf, font_id, size)
+      when is_handle(pdf) and is_font_id(font_id) and is_number(size) and size > 0,
+      do: GenServer.call(pdf, {:select_font, font_id, size})
+
+  @doc """
+  Sets character spacing to `spacing`.
+  NOTE: must be called from within a `with_text/2` block.
+  """
+  @spec set_character_space(Typo.handle(), number()) :: :ok | Typo.error()
+  def set_character_space(pdf, spacing) when is_handle(pdf) and is_number(spacing),
+    do: GenServer.call(pdf, {:set_character_space, spacing})
 
   @doc """
   Sets fill colour to Greyscale/RGB/CMYK/Hex/Name value `v`.
@@ -341,6 +373,14 @@ defmodule Typo.PDF.Canvas do
       :error -> {:error, :invalid_colour}
     end
   end
+
+  @doc """
+  Sets the text leading (line spacing).
+  NOTE: must be called from within a `with_text/2` block.
+  """
+  @spec set_leading(Typo.handle(), number()) :: :ok
+  def set_leading(pdf, leading) when is_handle(pdf) and is_number(leading),
+    do: GenServer.call(pdf, {:set_leading, leading})
 
   @doc """
   Sets line dash style.  The pattern is on for `on` points, off for `off` points,
@@ -468,6 +508,14 @@ defmodule Typo.PDF.Canvas do
       do: GenServer.cast(pdf, {:set_page_size, page, size})
 
   @doc """
+  Sets the text rise (height above baseline).
+  NOTE: must be called from within a `with_text/2` block.
+  """
+  @spec set_rise(Typo.handle(), number()) :: :ok
+  def set_rise(pdf, rise) when is_handle(pdf) and is_number(rise),
+    do: GenServer.call(pdf, {:set_rise, rise})
+
+  @doc """
   Sets stroke colour to Greyscale/RGB/CMYK/Hex/Name value `v`.
   For Greyscale/RGB/CMYK each component of the colour should be in the range
   0.0..1.0 and is restricted to this range by the function.  For hex colours,
@@ -530,6 +578,14 @@ defmodule Typo.PDF.Canvas do
       :error -> {:error, :invalid_colour}
     end
   end
+
+  @doc """
+  Sets word spacing to `spacing`.
+  NOTE: must be called from within a `with_text/2` block.
+  """
+  @spec set_word_space(Typo.handle(), number()) :: :ok | Typo.error()
+  def set_word_space(pdf, spacing) when is_handle(pdf) and is_number(spacing),
+    do: GenServer.call(pdf, {:set_word_space, spacing})
 
   @doc """
   Strokes the current path, with optional `close` value:

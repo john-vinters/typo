@@ -20,6 +20,11 @@ defmodule Typo.Utils.Guards do
   """
 
   @doc """
+  Returns `true` if `id` is a font id.
+  """
+  defguard is_font_id(id) when is_binary(id) or is_atom(id) or is_integer(id)
+
+  @doc """
   Returns `true` if `p` is possibly a server connection.
   """
   defguard is_handle(p) when is_pid(p)
