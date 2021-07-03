@@ -662,8 +662,6 @@ defmodule Typo.PDF.Canvas do
   @spec with_path(Typo.handle(), Typo.op_fun(), Typo.path_clip_stroke_fill()) ::
           :ok | Typo.error()
   def with_path(pdf, fun, psf \\ []) when is_handle(pdf) and is_function(fun) and is_list(psf) do
-    r = fun.()
-
     clip = Keyword.get(psf, :clip, false)
     stroke = Keyword.get(psf, :stroke, true)
     fill = Keyword.get(psf, :fill, false)
@@ -688,26 +686,26 @@ defmodule Typo.PDF.Canvas do
         false -> ""
       end
 
-    with :ok <- append(pdf, cf <> p <> sf), do: r
+    with r = fun.(),
+         :ok <- append(pdf, cf <> p <> sf),
+         do: r
   end
 
   @doc """
   Saves the current graphics state, runs the specified function and then
   restores the graphics state.  Returns the value returned by the specified
-  function (which should normally be `:ok` if successful) unless the call
-  to `restore_state/1` fails, in which case it is given priority.
+  function (which should normally be `:ok` if successful) unless the calls
+  to `save_state/1` or `restore_state/1` fail.
   """
   @spec with_state(Typo.handle(), Typo.op_fun()) :: :ok | Typo.error()
   def with_state(pdf, fun) when is_handle(pdf) and is_function(fun) do
-    :ok = save_state(pdf)
-    r = fun.()
-    with :ok <- restore_state(pdf), do: r
+    with :ok <- save_state(pdf), r = fun.(), :ok <- restore_state(pdf), do: r
   end
 
   @doc """
   Calls `begin_text/2`, runs the specified function and then calls `end_text/2`.
   Returns the value returned by the specified function (which should normally be
-  `:ok` if successful).
+  `:ok` if successful) unless the calls to `begin_text/1` or `end_text/1` fail.
   """
   @spec with_text(Typo.handle(), Typo.op_fun()) :: :ok | Typo.error()
   def with_text(pdf, fun) when is_handle(pdf) and is_function(fun) do
