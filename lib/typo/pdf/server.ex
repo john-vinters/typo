@@ -97,6 +97,23 @@ defmodule Typo.PDF.Server do
     end
   end
 
+  # begins a text block.
+  @spec handle_call(:begin_text, any(), Server.t()) ::
+          {:reply, :ok | Typo.error(), Server.t(), timeout()}
+  def handle_call(:begin_text, _from, %Server{in_text: true} = state) do
+    new_state = inc_req(state)
+    {:reply, {:error, :in_text_block}, new_state, new_state.idle_timeout}
+  end
+
+  def handle_call(:begin_text, _from, %Server{} = state) do
+    new_state =
+      %Server{state | in_text: true}
+      |> append("BT")
+      |> inc_req()
+
+    {:reply, :ok, new_state, new_state.idle_timeout}
+  end
+
   # deletes page.
   @spec handle_call({:delete_page, integer()}, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
@@ -118,6 +135,23 @@ defmodule Typo.PDF.Server do
       when is_integer(page_number) do
     new_state = inc_req(state)
     {:reply, {:error, :graphics_stack_not_empty}, new_state, new_state.idle_timeout}
+  end
+
+  # begins a text block.
+  @spec handle_call(:end_text, any(), Server.t()) ::
+          {:reply, :ok | Typo.error(), Server.t(), timeout()}
+  def handle_call(:end_text, _from, %Server{in_text: false} = state) do
+    new_state = inc_req(state)
+    {:reply, {:error, :not_in_text_block}, new_state, new_state.idle_timeout}
+  end
+
+  def handle_call(:end_text, _from, %Server{} = state) do
+    new_state =
+      %Server{state | in_text: false}
+      |> append("ET")
+      |> inc_req()
+
+    {:reply, :ok, new_state, new_state.idle_timeout}
   end
 
   # returns the current compression level.

@@ -34,6 +34,14 @@ defmodule Typo.PDF.Canvas do
     do: GenServer.cast(pdf, {:raw_append, data})
 
   @doc """
+  Starts a text block.  Note that using `with_text/2` is probably
+  preferred, as this ensures that there is always a matching
+  `end_text/1`.
+  """
+  @spec begin_text(Typo.handle()) :: :ok
+  def begin_text(pdf), do: GenServer.call(pdf, :begin_text)
+
+  @doc """
   Moves to `p1` and appends a Bézier curve onto the current path.
   Uses `p2`, `p3` and `p4` as the control points.
   """
@@ -106,6 +114,12 @@ defmodule Typo.PDF.Canvas do
   """
   @spec end_path(Typo.handle()) :: :ok
   def end_path(pdf) when is_handle(pdf), do: append(pdf, "n")
+
+  @doc """
+  Ends a text block.
+  """
+  @spec end_text(Typo.handle()) :: :ok
+  def end_text(pdf), do: GenServer.call(pdf, :end_text)
 
   @doc """
   Fills the current path using the optional `winding` rule:
@@ -688,5 +702,18 @@ defmodule Typo.PDF.Canvas do
     :ok = save_state(pdf)
     r = fun.()
     with :ok <- restore_state(pdf), do: r
+  end
+
+  @doc """
+  Calls `begin_text/2`, runs the specified function and then calls `end_text/2`.
+  Returns the value returned by the specified function (which should normally be
+  `:ok` if successful).
+  """
+  @spec with_text(Typo.handle(), Typo.op_fun()) :: :ok | Typo.error()
+  def with_text(pdf, fun) when is_handle(pdf) and is_function(fun) do
+    with :ok <- begin_text(pdf),
+         r = fun.(),
+         :ok <- end_text(pdf),
+         do: r
   end
 end
