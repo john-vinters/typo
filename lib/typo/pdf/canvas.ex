@@ -703,7 +703,7 @@ defmodule Typo.PDF.Canvas do
   end
 
   @doc """
-  Calls `begin_text/2`, runs the specified function and then calls `end_text/2`.
+  Calls `begin_text/1`, runs the specified function and then calls `end_text/1`.
   Returns the value returned by the specified function (which should normally be
   `:ok` if successful) unless the calls to `begin_text/1` or `end_text/1` fail.
   """
