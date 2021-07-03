@@ -218,7 +218,7 @@ defmodule Typo.PDF.Writer.Core do
   def out_resources(%Writer{} = w, %Server{} = _state) do
     object(w, :resources, fn %Writer{} = w, _oid ->
       proc_set = ["PDF", "Text", "ImageB", "ImageC", "ImageI"]
-      resources = %{"Fonts" => w.fonts, "ProcSet" => proc_set, "XObject" => w.xobjects}
+      resources = %{"Font" => w.fonts, "ProcSet" => proc_set, "XObject" => w.xobjects}
       out_dict(w, resources)
     end)
   end
