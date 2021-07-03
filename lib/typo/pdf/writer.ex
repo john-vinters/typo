@@ -20,7 +20,7 @@ defmodule Typo.PDF.Writer do
   """
 
   alias Typo.PDF.{Server, Writer}
-  alias Typo.PDF.Writer.{Core, Image}
+  alias Typo.PDF.Writer.{Core, Font, Image}
 
   # delayed write buffer (256KiB).
   @buffer 256 * 1024
@@ -141,6 +141,7 @@ defmodule Typo.PDF.Writer do
     with {:ok, w, _root_oid} <- register(w, nil, :page_root),
          {:ok, w} <- Core.out_header(w, state),
          {:ok, w} <- Image.out_images(w, state),
+         {:ok, w} <- Font.out_fonts(w, state),
          {:ok, w} <- Core.out_resources(w, state),
          {:ok, w} <- Core.out_pages(w, state),
          {:ok, w} <- Core.out_page_root(w, state),
