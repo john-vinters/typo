@@ -27,6 +27,7 @@ defmodule Typo do
   @type colour_cmyk :: {number(), number(), number(), number()}
   @type colour_greyscale :: number()
   @type colour_rgb :: {number(), number(), number()}
+  @type doc_fun :: (Typo.handle() -> :ok | Typo.error())
   @type error :: {:error, any()}
   @type font_id :: atom() | binary() | integer()
   @type handle :: pid()
