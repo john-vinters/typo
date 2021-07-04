@@ -278,6 +278,8 @@ defmodule Typo.PDF.Server do
         |> Map.put(:leading, leading)
         |> Map.put(:rise, 0)
         |> Map.put(:word_space, 0)
+        |> Map.put(:x, 0)
+        |> Map.put(:y, 0)
 
       new_state = %Server{ns | font_usage: new_fu, text_state: new_ts}
       {:reply, :ok, new_state, new_state.idle_timeout}
