@@ -275,6 +275,7 @@ defmodule Typo.PDF.Server do
         |> Map.put(:font, fid)
         |> Map.put(:size, size)
         |> Map.put(:character_space, 0)
+        |> Map.put(:horizontal_scale, 100)
         |> Map.put(:leading, leading)
         |> Map.put(:rise, 0)
         |> Map.put(:word_space, 0)
@@ -307,6 +308,24 @@ defmodule Typo.PDF.Server do
   end
 
   def handle_call({:set_character_space, _spacing}, _from, %Server{in_text: false} = state) do
+    new_state = inc_req(state)
+    {:reply, {:error, :not_in_text_block}, new_state, new_state.idle_timeout()}
+  end
+
+  # sets horizontal scale.
+  @spec handle_call({:set_horizontal_scale, number()}, any(), Server.t()) ::
+          {:reply, :ok | Typo.error(), Server.t(), timeout()}
+  def handle_call({:set_horizontal_scale, scale}, _from, %Server{in_text: true} = state)
+      when is_number(scale) do
+    new_state =
+      %Server{state | text_state: Map.put(state.text_state, :horizontal_scale, scale)}
+      |> inc_req()
+      |> append(n2s([scale, "Th"]))
+
+    {:reply, :ok, new_state, new_state.idle_timeout}
+  end
+
+  def handle_call({:set_horizontal_scale, _scale}, _from, %Server{in_text: false} = state) do
     new_state = inc_req(state)
     {:reply, {:error, :not_in_text_block}, new_state, new_state.idle_timeout()}
   end

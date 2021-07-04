@@ -389,6 +389,13 @@ defmodule Typo.PDF.Canvas do
   end
 
   @doc """
+  Sets text horizontal scaling to percentage of normal width.
+  """
+  @spec set_horizontal_scale(Typo.handle(), number()) :: :ok
+  def set_horizontal_scale(pdf, scale \\ 100) when is_handle(pdf) and is_number(scale),
+    do: GenServer.call(pdf, {:set_horizontal_scale, scale})
+
+  @doc """
   Sets the text leading (line spacing).
   NOTE: must be called from within a `with_text/2` block.
   """
