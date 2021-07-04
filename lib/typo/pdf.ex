@@ -90,6 +90,28 @@ defmodule Typo.PDF do
   def stop(pdf) when is_handle(pdf), do: GenServer.call(pdf, :stop, :infinity)
 
   @doc """
+  Starts a PDF server, then runs a function to generate document, and if
+  successful calls `write/2` to write the document to the given `filename`.
+  The server is then shut down.
+  """
+  @spec with_document(String.t(), Typo.doc_fun()) :: :ok | Typo.error()
+  def with_document(filename, fun)
+      when is_binary(filename) and is_function(fun) do
+    with {:ok, pdf} <- start_link() do
+      r = with_document_run(pdf, filename, fun)
+      _ = stop(pdf)
+      r
+    end
+  end
+
+  @spec with_document_run(Typo.handle(), String.t(), Typo.doc_fun()) :: :ok | Typo.error()
+  defp with_document_run(pdf, filename, fun) do
+    with :ok <- fun.(pdf),
+         :ok <- write(pdf, filename),
+         do: :ok
+  end
+
+  @doc """
   Writes in-memory PDF to `filename`.  Returns `:ok` if successful,
   `{:error, reason}` otherwise.
   """
