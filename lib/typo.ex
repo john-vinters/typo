@@ -57,6 +57,17 @@ defmodule Typo do
           | {:path, :close | :end | false}
         ]
   @type rectangle :: {number(), number(), number(), number()}
+  @type text_state :: %{
+          optional(:font) => Typo.Font.StandardFont.t(),
+          optional(:character_space) => number(),
+          optional(:horizontal_scale) => number(),
+          optional(:leading) => number(),
+          optional(:rise) => number(),
+          optional(:size) => number(),
+          optional(:word_space) => number(),
+          optional(:x) => number(),
+          optional(:y) => number()
+        }
   @type transform_matrix :: {number(), number(), number(), number(), number(), number()}
   @type winding_rule :: :non_zero | :even_odd
   @type xy :: {number(), number()}

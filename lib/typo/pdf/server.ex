@@ -46,7 +46,7 @@ defmodule Typo.PDF.Server do
           started: nil | :calendar.datetime(),
           state_stack: [map()],
           stream: binary(),
-          text_state: map()
+          text_state: Typo.text_state()
         }
 
   defstruct compression: 4,
