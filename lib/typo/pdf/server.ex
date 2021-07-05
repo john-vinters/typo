@@ -261,7 +261,8 @@ defmodule Typo.PDF.Server do
   def handle_call({:select_font, font_id, size}, _from, %Server{in_text: true} = state) do
     new_state = inc_req(state)
 
-    with fid when is_integer(fid) <- Map.get(state.font_ids, font_id, :not_found) do
+    with fid when is_integer(fid) <- Map.get(state.font_ids, font_id, :not_found),
+         %{} = font <- Map.get(state.fonts, fid, :not_found) do
       leading = size * 1.2
 
       ns =
@@ -273,7 +274,7 @@ defmodule Typo.PDF.Server do
 
       new_ts = %TextState{
         ns.text_state
-        | font: fid,
+        | font: font,
           size: size,
           character_space: 0,
           horizontal_scale: 100,
