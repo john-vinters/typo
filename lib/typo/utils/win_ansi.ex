@@ -19,6 +19,41 @@ defmodule Typo.Utils.WinAnsi do
   Converts UTF-8 encoding to WinAnsi.
   """
 
+  @doc """
+  Encodes the given UTF-8 string as WinAnsi characters.  Any characters which can't
+  be represented are replaced by `replacement`, which should also be a UTF-8 character.
+  If the replacement character cannot be represented or is an empty string, then it
+  is silently dropped from the output string.
+  Returns a binary containing the encoded string.
+  """
+  @spec encode(String.t(), String.t()) :: String.t()
+  def encode(this, replacement \\ "?") when is_binary(this) and is_binary(replacement) do
+    this
+    |> encode_to_list(replacement)
+    |> Enum.join()
+  end
+
+  @doc """
+  Encodes the given UTF-8 string as WinAnsi characters.  Any characters which can't
+  be represented are replaced by `replacement`, which should also be a UTF-8 character.
+  If the replacement character cannot be represented or is an empty string, then it
+  is silently dropped from the output string.
+  Returns a list of WinAnsi characters.
+  """
+  @spec encode_to_list(String.t(), String.t()) :: [String.t()]
+  def encode_to_list(this, replacement \\ "?") when is_binary(this) and is_binary(replacement) do
+    this
+    |> String.normalize(:nfc)
+    |> String.codepoints()
+    |> Enum.map(fn item ->
+      case to_winansi(item) do
+        :error -> if replacement != "", do: to_winansi(replacement), else: ""
+        other -> other
+      end
+    end)
+    |> Enum.filter(fn c -> c != :error end)
+  end
+
   @spec to_winansi(binary()) :: :error | binary()
   def to_winansi(<<i::8>>) when i > 31 and i < 127, do: <<i::8>>
   def to_winansi("€"), do: <<128::8>>
