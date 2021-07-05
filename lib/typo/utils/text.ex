@@ -76,9 +76,21 @@ defmodule Typo.Utils.Text do
           end
         end
       end)
+      |> encode_remove_last_spacing()
 
     {:ok, Enum.reverse(result)}
   end
+
+  # sets space to '0' for the last glyph (as we generate the list in reverse
+  # order, this is done to the first item in the list).
+  @spec encode_remove_last_spacing({binary(), Typo.encoded_text()}) ::
+          {binary(), Typo.encoded_text()}
+  defp encode_remove_last_spacing({r, [h | t]}) do
+    nh = Map.put(h, :space, 0)
+    {r, [nh | t]}
+  end
+
+  defp encode_remove_last_spacing(r), do: r
 
   @doc """
   Given the encoded text `this`, returns the string width.
