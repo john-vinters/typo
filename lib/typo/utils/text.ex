@@ -63,15 +63,13 @@ defmodule Typo.Utils.Text do
 
           case codepoint do
             " " ->
-              wss = ws * scale
-              c = %{type: :space, glyph: " ", kern: 0, space: wss, width: widths}
+              c = %{type: :space, glyph: " ", kern: 0, space: ws, width: widths}
               {codepoint, [c] ++ result}
 
             ch ->
               kern = if kern?, do: Map.get(font.kerning, {prev, codepoint}, 0), else: 0
-              css = cs * scale
               kerns = kern * scale
-              c = %{type: :glyph, glyph: ch, kern: kerns, space: css, width: widths}
+              c = %{type: :glyph, glyph: ch, kern: kerns, space: cs, width: widths}
               {codepoint, [c] ++ result}
           end
         end
