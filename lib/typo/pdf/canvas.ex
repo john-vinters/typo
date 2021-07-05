@@ -601,6 +601,33 @@ defmodule Typo.PDF.Canvas do
   end
 
   @doc """
+  Sets text render mode.
+  `options` is a keyword list:
+    * `:clip` - when `true`, text is added to clipping path (defaults to `false`).
+    * `:fill` - when `true`, text is filled (defaults to `true`).
+    * `:stroke` - when `true`, text is stroked (defaults to `false`).
+  """
+  def set_text_render(pdf, options \\ []) when is_handle(pdf) and is_list(options) do
+    clip? = Keyword.get(options, :clip, false)
+    fill? = Keyword.get(options, :fill, true)
+    stroke? = Keyword.get(options, :stroke, false)
+
+    tr =
+      case {clip?, fill?, stroke?} do
+        {false, false, false} -> 3
+        {false, false, true} -> 1
+        {false, true, false} -> 0
+        {false, true, true} -> 2
+        {true, false, false} -> 7
+        {true, false, true} -> 5
+        {true, true, false} -> 4
+        {true, true, true} -> 6
+      end
+
+    append(pdf, n2s([tr, "Tr"]))
+  end
+
+  @doc """
   Sets word spacing to `spacing`.
   NOTE: must be called from within a `with_text/2` block.
   """
