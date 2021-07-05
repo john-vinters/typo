@@ -280,9 +280,7 @@ defmodule Typo.PDF.Server do
           horizontal_scale: 100,
           leading: leading,
           rise: 0,
-          word_space: 0,
-          x: 0,
-          y: 0
+          word_space: 0
       }
 
       new_state = %Server{ns | font_usage: new_fu, text_state: new_ts}
