@@ -68,8 +68,7 @@ defmodule Typo.Utils.Text do
 
             ch ->
               kern = if kern?, do: Map.get(font.kerning, {prev, codepoint}, 0), else: 0
-              kerns = kern * scale
-              c = %{type: :glyph, glyph: ch, kern: kerns, space: cs, width: widths}
+              c = %{type: :glyph, glyph: ch, kern: kern, space: cs, width: widths}
               {codepoint, [c] ++ result}
           end
         end
