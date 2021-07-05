@@ -24,6 +24,7 @@ defmodule Typo.PDF.Server do
   alias Typo.Font.StandardFont
   alias Typo.Image.{JPEG, PNG}
   alias Typo.PDF.{Server, Writer}
+  alias Typo.Utils.TextState
 
   @type t :: %__MODULE__{
           compression: 0..9,
@@ -46,7 +47,7 @@ defmodule Typo.PDF.Server do
           started: nil | :calendar.datetime(),
           state_stack: [map()],
           stream: binary(),
-          text_state: Typo.text_state()
+          text_state: TextState.t()
         }
 
   defstruct compression: 4,
@@ -69,7 +70,7 @@ defmodule Typo.PDF.Server do
             started: nil,
             state_stack: [],
             stream: <<>>,
-            text_state: %{}
+            text_state: %TextState{}
 
   # appends the given block of data onto the current page stream, adding a space
   # separator if required.
@@ -270,17 +271,18 @@ defmodule Typo.PDF.Server do
 
       new_fu = Map.put(ns.font_usage, fid, true)
 
-      new_ts =
+      new_ts = %TextState{
         ns.text_state
-        |> Map.put(:font, fid)
-        |> Map.put(:size, size)
-        |> Map.put(:character_space, 0)
-        |> Map.put(:horizontal_scale, 100)
-        |> Map.put(:leading, leading)
-        |> Map.put(:rise, 0)
-        |> Map.put(:word_space, 0)
-        |> Map.put(:x, 0)
-        |> Map.put(:y, 0)
+        | font: fid,
+          size: size,
+          character_space: 0,
+          horizontal_scale: 100,
+          leading: leading,
+          rise: 0,
+          word_space: 0,
+          x: 0,
+          y: 0
+      }
 
       new_state = %Server{ns | font_usage: new_fu, text_state: new_ts}
       {:reply, :ok, new_state, new_state.idle_timeout}
@@ -300,7 +302,7 @@ defmodule Typo.PDF.Server do
   def handle_call({:set_character_space, spacing}, _from, %Server{in_text: true} = state)
       when is_number(spacing) do
     new_state =
-      %Server{state | text_state: Map.put(state.text_state, :character_space, spacing)}
+      %Server{state | text_state: %TextState{state.text_state | character_space: spacing}}
       |> inc_req()
       |> append(n2s([spacing, "Tc"]))
 
@@ -318,7 +320,7 @@ defmodule Typo.PDF.Server do
   def handle_call({:set_horizontal_scale, scale}, _from, %Server{in_text: true} = state)
       when is_number(scale) do
     new_state =
-      %Server{state | text_state: Map.put(state.text_state, :horizontal_scale, scale)}
+      %Server{state | text_state: %TextState{state.text_state | horizontal_scale: scale}}
       |> inc_req()
       |> append(n2s([scale, "Th"]))
 
@@ -336,7 +338,7 @@ defmodule Typo.PDF.Server do
   def handle_call({:set_leading, leading}, _from, %Server{in_text: true} = state)
       when is_number(leading) do
     new_state =
-      %Server{state | text_state: Map.put(state.text_state, :leading, leading)}
+      %Server{state | text_state: %TextState{state.text_state | leading: leading}}
       |> inc_req()
       |> append(n2s([leading, "TL"]))
 
@@ -390,7 +392,7 @@ defmodule Typo.PDF.Server do
   def handle_call({:set_rise, rise}, _from, %Server{in_text: true} = state)
       when is_number(rise) do
     new_state =
-      %Server{state | text_state: Map.put(state.text_state, :rise, rise)}
+      %Server{state | text_state: %TextState{state.text_state | rise: rise}}
       |> inc_req()
       |> append(n2s([rise, "Tr"]))
 
@@ -408,7 +410,7 @@ defmodule Typo.PDF.Server do
   def handle_call({:set_word_space, spacing}, _from, %Server{in_text: true} = state)
       when is_number(spacing) do
     new_state =
-      %Server{state | text_state: Map.put(state.text_state, :word_space, spacing)}
+      %Server{state | text_state: %TextState{state.text_state | word_space: spacing}}
       |> inc_req()
       |> append(n2s([spacing, "Tw"]))
 
