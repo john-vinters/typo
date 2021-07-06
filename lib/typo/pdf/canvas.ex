@@ -96,6 +96,30 @@ defmodule Typo.PDF.Canvas do
     do: GenServer.call(pdf, {:delete_page, page_number})
 
   @doc """
+  Draws given text string `this` at text position `p`.
+  `options` is a keyword list:
+    * `:clip` - when `true`, text is added to clipping path (defaults to `false`).
+    * `:fill` - when `true`, text is filled (defaults to `true`).
+    * `:kern` - when `true`, text is kerned (defaults to `true`).
+    * `:replacement` - specifies a replacement character to be used when any
+      characters in the original UTF-8 string can't be encoded for the font in
+      use.  Note that if the replacement also can't be encoded, then the problem
+      character is silently dropped.
+    * `:stroke` - when `true`, text is stroked (defaults to `false`).
+
+  NOTE: a font must have been previously selected using `select_font/3`.
+  """
+  @spec draw_text(Typo.handle(), Typo.xy(), binary(), Keyword.t()) :: :ok | Typo.error()
+  def draw_text(pdf, {x, y} = p, this, options \\ [])
+      when is_handle(pdf) and is_number(x) and is_number(y) and is_binary(this) and
+             is_list(options) do
+    with :ok <- move_text_to(pdf, p),
+         :ok <- GenServer.call(pdf, {:draw_text, this, options}),
+         :ok <- set_text_render(pdf, options),
+         do: :ok
+  end
+
+  @doc """
   Appends an Ellipse centred on `p` with x radius `rx` and y radius `ry` onto
   the current path.
   """
@@ -242,6 +266,13 @@ defmodule Typo.PDF.Canvas do
   @spec move_to(Typo.handle(), Typo.xy()) :: :ok
   def move_to(pdf, {x, y} = _p) when is_handle(pdf) and is_number(x) and is_number(y),
     do: append(pdf, n2s([x, y, "m"]))
+
+  @doc """
+  Moves the current text position to `p`.
+  """
+  @spec move_text_to(Typo.handle(), Typo.xy()) :: :ok | Typo.error()
+  def move_text_to(pdf, {x, y} = p) when is_handle(pdf) and is_number(x) and is_number(y),
+    do: GenServer.call(pdf, {:move_text_to, p})
 
   @doc """
   Places loaded image `image_id` onto the page.

@@ -24,7 +24,7 @@ defmodule Typo.PDF.Server do
   alias Typo.Font.StandardFont
   alias Typo.Image.{JPEG, PNG}
   alias Typo.PDF.{Server, Writer}
-  alias Typo.Utils.TextState
+  alias Typo.Utils.{Text, TextState}
 
   @type t :: %__MODULE__{
           compression: 0..9,
@@ -138,6 +138,29 @@ defmodule Typo.PDF.Server do
     {:reply, {:error, :graphics_stack_not_empty}, new_state, new_state.idle_timeout}
   end
 
+  # draws text string.
+  @spec handle_call({:draw_text, String.t(), Keyword.t()}, any(), Server.t()) ::
+          {:reply, :ok | Typo.error(), Server.t(), timeout()}
+  def handle_call(
+        {:draw_text, _p, _this},
+        _from,
+        %Server{in_text: true, text_state: %TextState{font: nil}} = state
+      ) do
+    new_state = inc_req(state)
+    {:reply, {:error, :no_font_selected}, new_state, new_state.idle_timeout}
+  end
+
+  def handle_call({:draw_text, this, options}, _from, %Server{in_text: true} = state)
+      when is_binary(this) do
+    new_state = inc_req(state)
+
+    with {:ok, new_state} <- write_text(new_state, this, options) do
+      {:reply, :ok, new_state, new_state.idle_timeout}
+    else
+      {:error, _} = err -> {:reply, err, new_state, new_state.idle_timeout}
+    end
+  end
+
   # begins a text block.
   @spec handle_call(:end_text, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
@@ -215,6 +238,26 @@ defmodule Typo.PDF.Server do
     new_state = inc_req(state)
 
     with {:ok, new_state} <- register_image(state, image_id, filename) do
+      {:reply, :ok, new_state, new_state.idle_timeout}
+    else
+      {:error, _} = err -> {:reply, err, new_state, new_state.idle_timeout}
+    end
+  end
+
+  # moves text position.
+  @spec handle_call({:move_text_to, Typo.xy()}, any(), Server.t()) ::
+          {:reply, :ok | Typo.error(), Server.t(), timeout()}
+  def handle_call({:move_text_to, _p}, _from, %Server{in_text: false} = state) do
+    new_state = inc_req(state)
+    {:reply, {:error, :not_in_text_block}, new_state, new_state.idle_timeout}
+  end
+
+  def handle_call({:move_text_to, {x, y}}, _from, %Server{in_text: true} = state) do
+    new_state = inc_req(state)
+
+    with %Server{} = new_state <- append(new_state, n2s([1, 0, 0, 1, x, y, "Tm"])) do
+      new_text_state = %TextState{state.text_state | x: x, y: y}
+      new_state = %Server{new_state | text_state: new_text_state}
       {:reply, :ok, new_state, new_state.idle_timeout}
     else
       {:error, _} = err -> {:reply, err, new_state, new_state.idle_timeout}
@@ -593,4 +636,24 @@ defmodule Typo.PDF.Server do
   """
   @spec start_link(any()) :: {:ok, Typo.handle()} | Typo.error()
   def start_link(_options \\ []), do: GenServer.start_link(__MODULE__, %Server{})
+
+  # outputs text string at current text position.
+  @spec write_text(Server.t(), binary(), Keyword.t()) :: {:ok, Server.t()} | Typo.error()
+  defp write_text(%Server{} = state, this, options)
+       when is_binary(this) and is_list(options) do
+    with {:ok, encoded} when is_list(encoded) <- Text.encode(state.text_state, this, options),
+         width when is_number(width) <- Text.get_width(encoded) do
+      txt =
+        Enum.reduce(encoded, [], fn item, acc ->
+          case Map.get(item, :kern, 0) do
+            0 -> [n2s([{:str, item.glyph}])] ++ acc
+            k -> [n2s([k, {:str, item.glyph}])] ++ acc
+          end
+        end)
+        |> Enum.reverse()
+
+      new_text_state = %TextState{state.text_state | x: state.text_state.x + width}
+      {:ok, append(%Server{state | text_state: new_text_state}, n2s(["[", txt, "] TJ"]))}
+    end
+  end
 end
