@@ -245,14 +245,14 @@ defmodule Typo.PDF.Server do
   end
 
   # moves text position.
-  @spec handle_call({:move_text_to, Typo.xy()}, any(), Server.t()) ::
+  @spec handle_call({:move_text, Typo.xy()}, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
-  def handle_call({:move_text_to, _p}, _from, %Server{in_text: false} = state) do
+  def handle_call({:move_text, _p}, _from, %Server{in_text: false} = state) do
     new_state = inc_req(state)
     {:reply, {:error, :not_in_text_block}, new_state, new_state.idle_timeout}
   end
 
-  def handle_call({:move_text_to, {x, y}}, _from, %Server{in_text: true} = state) do
+  def handle_call({:move_text, {x, y}}, _from, %Server{in_text: true} = state) do
     new_state = inc_req(state)
 
     with %Server{} = new_state <- append(new_state, n2s([1, 0, 0, 1, x, y, "Tm"])) do

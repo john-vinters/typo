@@ -113,7 +113,7 @@ defmodule Typo.PDF.Canvas do
   def draw_text(pdf, {x, y} = p, this, options \\ [])
       when is_handle(pdf) and is_number(x) and is_number(y) and is_binary(this) and
              is_list(options) do
-    with :ok <- move_text_to(pdf, p),
+    with :ok <- move_text(pdf, p),
          :ok <- set_text_render(pdf, options),
          :ok <- GenServer.call(pdf, {:draw_text, this, options}),
          do: :ok
@@ -126,7 +126,7 @@ defmodule Typo.PDF.Canvas do
   @spec ellipse(Typo.handle(), Typo.xy(), number(), number()) :: :ok
   def ellipse(pdf, {x, y} = _p, rx, ry)
       when is_handle(pdf) and is_number(x) and is_number(y) and is_number(rx) and is_number(ry) do
-    :ok = move_to(pdf, {x + rx, y})
+    :ok = move(pdf, {x + rx, y})
     :ok = bezier_to(pdf, {x + rx, y + ry * @k}, {x + rx * @k, y + ry}, {x, y + ry})
     :ok = bezier_to(pdf, {x - rx * @k, y + ry}, {x - rx, y + ry * @k}, {x - rx, y})
     :ok = bezier_to(pdf, {x - rx, y - ry * @k}, {x - rx * @k, y - ry}, {x, y - ry})
@@ -263,16 +263,16 @@ defmodule Typo.PDF.Canvas do
   @doc """
   Moves the current graphics position to `p`, which also begins a new subpath.
   """
-  @spec move_to(Typo.handle(), Typo.xy()) :: :ok
-  def move_to(pdf, {x, y} = _p) when is_handle(pdf) and is_number(x) and is_number(y),
+  @spec move(Typo.handle(), Typo.xy()) :: :ok
+  def move(pdf, {x, y} = _p) when is_handle(pdf) and is_number(x) and is_number(y),
     do: append(pdf, n2s([x, y, "m"]))
 
   @doc """
   Moves the current text position to `p`.
   """
-  @spec move_text_to(Typo.handle(), Typo.xy()) :: :ok | Typo.error()
-  def move_text_to(pdf, {x, y} = p) when is_handle(pdf) and is_number(x) and is_number(y),
-    do: GenServer.call(pdf, {:move_text_to, p})
+  @spec move_text(Typo.handle(), Typo.xy()) :: :ok | Typo.error()
+  def move_text(pdf, {x, y} = p) when is_handle(pdf) and is_number(x) and is_number(y),
+    do: GenServer.call(pdf, {:move_text, p})
 
   @doc """
   Places loaded image `image_id` onto the page.
