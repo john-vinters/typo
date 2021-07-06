@@ -46,7 +46,7 @@ defmodule Typo.Utils.Text do
       when is_binary(this) and is_list(options) do
     kern? = Keyword.get(options, :kern, true)
     replacement = Keyword.get(options, :replacement, "")
-    scale = sz / 1000.0
+    sc = sz / 1000.0
 
     {_, result} =
       this
@@ -59,7 +59,7 @@ defmodule Typo.Utils.Text do
           # for now, just drop the problematic character...
           {codepoint, result}
         else
-          widths = width * scale
+          widths = width * sc
 
           case codepoint do
             " " ->
@@ -67,17 +67,8 @@ defmodule Typo.Utils.Text do
               {codepoint, [c] ++ result}
 
             ch ->
-              kern = if kern?, do: Map.get(font.kerning, {prev, codepoint}, 0), else: 0
-
-              c = %{
-                type: :glyph,
-                glyph: ch,
-                kern: kern,
-                kern_sc: kern * scale,
-                space: cs,
-                width: widths
-              }
-
+              k = if kern?, do: Map.get(font.kerning, {prev, codepoint}, 0), else: 0
+              c = %{type: :glyph, glyph: ch, kern: k, kern_sc: k * sc, space: cs, width: widths}
               {codepoint, [c] ++ result}
           end
         end
