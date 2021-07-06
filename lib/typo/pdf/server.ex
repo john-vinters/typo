@@ -650,7 +650,7 @@ defmodule Typo.PDF.Server do
   def start_link(_options \\ []), do: GenServer.start_link(__MODULE__, %Server{})
 
   # outputs text string at current text position.
-  @spec write_text(Server.t(), binary(), Keyword.t()) :: {:ok, Server.t()} | Typo.error()
+  @spec write_text(Server.t(), binary(), Keyword.t()) :: {:ok, Server.t()}
   defp write_text(
          %Server{in_text: true, text_state: %TextState{font: f} = ts} = state,
          this,
@@ -663,13 +663,14 @@ defmodule Typo.PDF.Server do
         Enum.reduce(encoded, [], fn item, acc ->
           case Map.get(item, :kern, 0) do
             0 -> [n2s([{:str, item.glyph}])] ++ acc
-            k -> [n2s([k, {:str, item.glyph}])] ++ acc
+            k when is_number(k) -> [n2s([k, {:str, item.glyph}])] ++ acc
           end
         end)
         |> Enum.reverse()
 
       new_text_state = %TextState{state.text_state | x: state.text_state.x + width}
-      {:ok, append(%Server{state | text_state: new_text_state}, n2s(["[", txt, "] TJ"]))}
+      new_state = %Server{state | text_state: new_text_state}
+      {:ok, append(new_state, n2s(["[", txt, "] TJ"]))}
     end
   end
 end
