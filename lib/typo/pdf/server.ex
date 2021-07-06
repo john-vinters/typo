@@ -311,7 +311,7 @@ defmodule Typo.PDF.Server do
       ns =
         new_state
         |> append(n2s(["/F#{fid}", size, "Tf"]))
-        |> append(n2s([0, "Tc", leading, "TL", 0, "Ts", 0, "Tw"]))
+        |> append(n2s([0, "Tc", 100, "Tz", leading, "TL", 0, "Ts", 0, "Tw"]))
 
       new_fu = Map.put(ns.font_usage, fid, true)
 
@@ -364,7 +364,7 @@ defmodule Typo.PDF.Server do
     new_state =
       %Server{state | text_state: %TextState{state.text_state | horizontal_scale: scale}}
       |> inc_req()
-      |> append(n2s([scale, "Th"]))
+      |> append(n2s([scale, "Tz"]))
 
     {:reply, :ok, new_state, new_state.idle_timeout}
   end
