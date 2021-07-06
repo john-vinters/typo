@@ -98,6 +98,17 @@ defmodule Typo.PDF.Server do
     end
   end
 
+  # runs a state update function, ensuring that we are in a text block.
+  defp ensure_text(%Server{in_text: true} = state, fun) when is_function(fun) do
+    new_state = inc_req(state)
+    fun.(new_state)
+  end
+
+  defp ensure_text(%Server{in_text: false} = state, fun) when is_function(fun) do
+    new_state = inc_req(state)
+    {:reply, {:error, :not_in_text_block}, new_state, new_state.idle_timeout}
+  end
+
   # begins a text block.
   @spec handle_call(:begin_text, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
@@ -142,40 +153,33 @@ defmodule Typo.PDF.Server do
   @spec handle_call({:draw_text, String.t(), Keyword.t()}, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
   def handle_call(
-        {:draw_text, _p, _this},
+        {:draw_text, this, options},
         _from,
-        %Server{in_text: true, text_state: %TextState{font: nil}} = state
-      ) do
-    new_state = inc_req(state)
-    {:reply, {:error, :no_font_selected}, new_state, new_state.idle_timeout}
-  end
-
-  def handle_call({:draw_text, this, options}, _from, %Server{in_text: true} = state)
+        %Server{text_state: %TextState{} = ts} = state
+      )
       when is_binary(this) do
-    new_state = inc_req(state)
-
-    with {:ok, new_state} <- write_text(new_state, this, options) do
-      {:reply, :ok, new_state, new_state.idle_timeout}
-    else
-      {:error, _} = err -> {:reply, err, new_state, new_state.idle_timeout}
-    end
+    ensure_text(state, fn %Server{} = state ->
+      with {:font, font} when not is_nil(font) <- {:font, ts.font},
+           {:ok, new_state} <- write_text(state, this, options) do
+        {:reply, :ok, new_state, new_state.idle_timeout}
+      else
+        {:error, _} = err -> {:reply, err, state, state.idle_timeout}
+        {:font, nil} -> {:reply, {:error, :no_font_selected}, state, state.idle_timeout}
+      end
+    end)
   end
 
-  # begins a text block.
+  # ends a text block.
   @spec handle_call(:end_text, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
-  def handle_call(:end_text, _from, %Server{in_text: false} = state) do
-    new_state = inc_req(state)
-    {:reply, {:error, :not_in_text_block}, new_state, new_state.idle_timeout}
-  end
-
   def handle_call(:end_text, _from, %Server{} = state) do
-    new_state =
-      %Server{state | in_text: false}
-      |> append("ET")
-      |> inc_req()
+    ensure_text(state, fn %Server{} = state ->
+      new_state =
+        %Server{state | in_text: false}
+        |> append("ET")
 
-    {:reply, :ok, new_state, new_state.idle_timeout}
+      {:reply, :ok, new_state, new_state.idle_timeout}
+    end)
   end
 
   # returns the current compression level.
@@ -247,21 +251,16 @@ defmodule Typo.PDF.Server do
   # moves text position.
   @spec handle_call({:move_text, Typo.xy()}, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
-  def handle_call({:move_text, _p}, _from, %Server{in_text: false} = state) do
-    new_state = inc_req(state)
-    {:reply, {:error, :not_in_text_block}, new_state, new_state.idle_timeout}
-  end
-
-  def handle_call({:move_text, {x, y}}, _from, %Server{in_text: true} = state) do
-    new_state = inc_req(state)
-
-    with %Server{} = new_state <- append(new_state, n2s([1, 0, 0, 1, x, y, "Tm"])) do
-      new_text_state = %TextState{state.text_state | x: x, y: y}
-      new_state = %Server{new_state | text_state: new_text_state}
-      {:reply, :ok, new_state, new_state.idle_timeout}
-    else
-      {:error, _} = err -> {:reply, err, new_state, new_state.idle_timeout}
-    end
+  def handle_call({:move_text, {x, y} = p}, _from, %Server{} = state) do
+    ensure_text(state, fn %Server{} = state ->
+      with %Server{} = new_state <- move_text(state, p) do
+        new_text_state = %TextState{new_state.text_state | x: x, y: y}
+        new_state = %Server{new_state | text_state: new_text_state}
+        {:reply, :ok, new_state, new_state.idle_timeout}
+      else
+        {:error, _} = err -> {:reply, err, state, state.idle_timeout}
+      end
+    end)
   end
 
   # places a loaded image onto the page.
@@ -301,95 +300,78 @@ defmodule Typo.PDF.Server do
   # selects font.
   @spec handle_call({:select_font, Typo.font_id(), number()}, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
-  def handle_call({:select_font, font_id, size}, _from, %Server{in_text: true} = state) do
-    new_state = inc_req(state)
+  def handle_call({:select_font, font_id, size}, _from, %Server{} = state) do
+    ensure_text(state, fn %Server{} = state ->
+      with fid when is_integer(fid) <- Map.get(state.font_ids, font_id, :not_found),
+           %{} = font <- Map.get(state.fonts, fid, :not_found) do
+        leading = size * 1.2
 
-    with fid when is_integer(fid) <- Map.get(state.font_ids, font_id, :not_found),
-         %{} = font <- Map.get(state.fonts, fid, :not_found) do
-      leading = size * 1.2
+        ns =
+          state
+          |> append(n2s(["/F#{fid}", size, "Tf"]))
+          |> append(n2s([0, "Tc", 100, "Tz", leading, "TL", 0, "Ts", 0, "Tw"]))
 
-      ns =
-        new_state
-        |> append(n2s(["/F#{fid}", size, "Tf"]))
-        |> append(n2s([0, "Tc", 100, "Tz", leading, "TL", 0, "Ts", 0, "Tw"]))
+        new_fu = Map.put(ns.font_usage, fid, true)
 
-      new_fu = Map.put(ns.font_usage, fid, true)
+        new_ts = %TextState{
+          ns.text_state
+          | font: font,
+            size: size,
+            character_space: 0,
+            horizontal_scale: 100,
+            leading: leading,
+            rise: 0,
+            word_space: 0
+        }
 
-      new_ts = %TextState{
-        ns.text_state
-        | font: font,
-          size: size,
-          character_space: 0,
-          horizontal_scale: 100,
-          leading: leading,
-          rise: 0,
-          word_space: 0
-      }
-
-      new_state = %Server{ns | font_usage: new_fu, text_state: new_ts}
-      {:reply, :ok, new_state, new_state.idle_timeout}
-    else
-      :not_found -> {:reply, {:error, :not_found}, new_state, new_state.idle_timeout}
-    end
-  end
-
-  def handle_call({:select_font, _font_id, _size}, _from, %Server{in_text: false} = state) do
-    new_state = inc_req(state)
-    {:reply, {:error, :not_in_text_block}, new_state, new_state.idle_timeout()}
+        new_state = %Server{ns | font_usage: new_fu, text_state: new_ts}
+        {:reply, :ok, new_state, new_state.idle_timeout}
+      else
+        :not_found -> {:reply, {:error, :not_found}, state, state.idle_timeout}
+      end
+    end)
   end
 
   # sets character spacing.
   @spec handle_call({:set_character_space, number()}, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
-  def handle_call({:set_character_space, spacing}, _from, %Server{in_text: true} = state)
+  def handle_call({:set_character_space, spacing}, _from, %Server{} = state)
       when is_number(spacing) do
-    new_state =
-      %Server{state | text_state: %TextState{state.text_state | character_space: spacing}}
-      |> inc_req()
-      |> append(n2s([spacing, "Tc"]))
+    ensure_text(state, fn %Server{} = state ->
+      new_state =
+        %Server{state | text_state: %TextState{state.text_state | character_space: spacing}}
+        |> append(n2s([spacing, "Tc"]))
 
-    {:reply, :ok, new_state, new_state.idle_timeout}
-  end
-
-  def handle_call({:set_character_space, _spacing}, _from, %Server{in_text: false} = state) do
-    new_state = inc_req(state)
-    {:reply, {:error, :not_in_text_block}, new_state, new_state.idle_timeout()}
+      {:reply, :ok, new_state, new_state.idle_timeout}
+    end)
   end
 
   # sets horizontal scale.
   @spec handle_call({:set_horizontal_scale, number()}, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
-  def handle_call({:set_horizontal_scale, scale}, _from, %Server{in_text: true} = state)
+  def handle_call({:set_horizontal_scale, scale}, _from, %Server{} = state)
       when is_number(scale) do
-    new_state =
-      %Server{state | text_state: %TextState{state.text_state | horizontal_scale: scale}}
-      |> inc_req()
-      |> append(n2s([scale, "Tz"]))
+    ensure_text(state, fn %Server{} = state ->
+      new_state =
+        %Server{state | text_state: %TextState{state.text_state | horizontal_scale: scale}}
+        |> append(n2s([scale, "Tz"]))
 
-    {:reply, :ok, new_state, new_state.idle_timeout}
-  end
-
-  def handle_call({:set_horizontal_scale, _scale}, _from, %Server{in_text: false} = state) do
-    new_state = inc_req(state)
-    {:reply, {:error, :not_in_text_block}, new_state, new_state.idle_timeout()}
+      {:reply, :ok, new_state, new_state.idle_timeout}
+    end)
   end
 
   # sets leading.
   @spec handle_call({:set_leading, number()}, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
-  def handle_call({:set_leading, leading}, _from, %Server{in_text: true} = state)
+  def handle_call({:set_leading, leading}, _from, %Server{} = state)
       when is_number(leading) do
-    new_state =
-      %Server{state | text_state: %TextState{state.text_state | leading: leading}}
-      |> inc_req()
-      |> append(n2s([leading, "TL"]))
+    ensure_text(state, fn %Server{} = state ->
+      new_state =
+        %Server{state | text_state: %TextState{state.text_state | leading: leading}}
+        |> append(n2s([leading, "TL"]))
 
-    {:reply, :ok, new_state, new_state.idle_timeout}
-  end
-
-  def handle_call({:set_leading, _leading}, _from, %Server{in_text: false} = state) do
-    new_state = inc_req(state)
-    {:reply, {:error, :not_in_text_block}, new_state, new_state.idle_timeout}
+      {:reply, :ok, new_state, new_state.idle_timeout}
+    end)
   end
 
   # sets current page number.
@@ -431,37 +413,29 @@ defmodule Typo.PDF.Server do
   # sets rise.
   @spec handle_call({:set_rise, number()}, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
-  def handle_call({:set_rise, rise}, _from, %Server{in_text: true} = state)
+  def handle_call({:set_rise, rise}, _from, %Server{} = state)
       when is_number(rise) do
-    new_state =
-      %Server{state | text_state: %TextState{state.text_state | rise: rise}}
-      |> inc_req()
-      |> append(n2s([rise, "Tr"]))
+    ensure_text(state, fn %Server{} = state ->
+      new_state =
+        %Server{state | text_state: %TextState{state.text_state | rise: rise}}
+        |> append(n2s([rise, "Tr"]))
 
-    {:reply, :ok, new_state, new_state.idle_timeout}
-  end
-
-  def handle_call({:set_rise, _rise}, _from, %Server{in_text: false} = state) do
-    new_state = inc_req(state)
-    {:reply, {:error, :not_in_text_block}, new_state, new_state.idle_timeout}
+      {:reply, :ok, new_state, new_state.idle_timeout}
+    end)
   end
 
   # sets word spacing.
   @spec handle_call({:set_word_space, number()}, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
-  def handle_call({:set_word_space, spacing}, _from, %Server{in_text: true} = state)
+  def handle_call({:set_word_space, spacing}, _from, %Server{} = state)
       when is_number(spacing) do
-    new_state =
-      %Server{state | text_state: %TextState{state.text_state | word_space: spacing}}
-      |> inc_req()
-      |> append(n2s([spacing, "Tw"]))
+    ensure_text(state, fn %Server{} = state ->
+      new_state =
+        %Server{state | text_state: %TextState{state.text_state | word_space: spacing}}
+        |> append(n2s([spacing, "Tw"]))
 
-    {:reply, :ok, new_state, new_state.idle_timeout}
-  end
-
-  def handle_call({:set_word_space, _spacing}, _from, %Server{in_text: false} = state) do
-    new_state = inc_req(state)
-    {:reply, {:error, :not_in_text_block}, new_state, new_state.idle_timeout()}
+      {:reply, :ok, new_state, new_state.idle_timeout}
+    end)
   end
 
   # stops the server.
@@ -482,29 +456,17 @@ defmodule Typo.PDF.Server do
   # writes text string at current text position.
   @spec handle_call({:write_text, String.t(), Keyword.t()}, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
-  def handle_call(
-        {:write_text, _this, _options},
-        _from,
-        %Server{in_text: true, text_state: %TextState{font: nil}} = state
-      ) do
-    new_state = inc_req(state)
-    {:reply, {:error, :no_font_selected}, new_state, new_state.idle_timeout}
-  end
-
-  def handle_call(
-        {:write_text, this, options},
-        _from,
-        %Server{in_text: true, text_state: text_state} = state
-      )
-      when is_binary(this) do
-    new_state = inc_req(state)
-
-    with new_state <- append(new_state, n2s([1, 0, 0, 1, text_state.x, text_state.y, "Tm"])),
-         {:ok, new_state} <- write_text(new_state, this, options) do
-      {:reply, :ok, new_state, new_state.idle_timeout}
-    else
-      {:error, _} = err -> {:reply, err, new_state, new_state.idle_timeout}
-    end
+  def handle_call({:write_text, this, options}, _from, %Server{} = state) when is_binary(this) do
+    ensure_text(state, fn %Server{text_state: text_state} = state ->
+      with {:font, font} when not is_nil(font) <- {:font, text_state.font},
+           new_state <- move_text(state, {text_state.x, text_state.y}),
+           {:ok, new_state} <- write_text(new_state, this, options) do
+        {:reply, :ok, new_state, new_state.idle_timeout}
+      else
+        {:error, _} = err -> {:reply, err, state, state.idle_timeout}
+        {:font, nil} -> {:reply, {:error, :no_font_selected}, state, state.idle_timeout}
+      end
+    end)
   end
 
   # appends binary to page stream.
@@ -587,6 +549,12 @@ defmodule Typo.PDF.Server do
     {:ok, new_state, new_state.idle_timeout}
   end
 
+  # moves the text current position in the PDF (NOT the local state).
+  @spec move_text(Server.t(), Typo.xy()) :: Server.t()
+  def move_text(%Server{} = state, {x, y} = _p) when is_number(x) and is_number(y) do
+    append(state, n2s([1, 0, 0, 1, x, y, "Tm"]))
+  end
+
   # loads an registers an image.
   @spec register_image(Server.t(), Typo.image_id(), String.t()) ::
           {:ok, Server.t()} | Typo.error()
@@ -667,8 +635,8 @@ defmodule Typo.PDF.Server do
 
   # outputs text string at current text position.
   @spec write_text(Server.t(), binary(), Keyword.t()) :: {:ok, Server.t()} | Typo.error()
-  defp write_text(%Server{} = state, this, options)
-       when is_binary(this) and is_list(options) do
+  defp write_text(%Server{in_text: true, text_state: %TextState{font: f}} = state, this, options)
+       when is_binary(this) and is_list(options) and not is_nil(f) do
     with {:ok, encoded} when is_list(encoded) <- Text.encode(state.text_state, this, options),
          width when is_number(width) <- Text.get_width(encoded) do
       txt =
