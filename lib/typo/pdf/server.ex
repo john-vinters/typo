@@ -479,6 +479,34 @@ defmodule Typo.PDF.Server do
     {:reply, r, new_state, new_state.idle_timeout}
   end
 
+  # writes text string at current text position.
+  @spec handle_call({:write_text, String.t(), Keyword.t()}, any(), Server.t()) ::
+          {:reply, :ok | Typo.error(), Server.t(), timeout()}
+  def handle_call(
+        {:write_text, _this, _options},
+        _from,
+        %Server{in_text: true, text_state: %TextState{font: nil}} = state
+      ) do
+    new_state = inc_req(state)
+    {:reply, {:error, :no_font_selected}, new_state, new_state.idle_timeout}
+  end
+
+  def handle_call(
+        {:write_text, this, options},
+        _from,
+        %Server{in_text: true, text_state: text_state} = state
+      )
+      when is_binary(this) do
+    new_state = inc_req(state)
+
+    with new_state <- append(new_state, n2s([1, 0, 0, 1, text_state.x, text_state.y, "Tm"])),
+         {:ok, new_state} <- write_text(new_state, this, options) do
+      {:reply, :ok, new_state, new_state.idle_timeout}
+    else
+      {:error, _} = err -> {:reply, err, new_state, new_state.idle_timeout}
+    end
+  end
+
   # appends binary to page stream.
   @spec handle_cast({:raw_append, binary()}, Server.t()) :: {:noreply, Server.t(), timeout()}
   def handle_cast({:raw_append, <<data::binary>>}, %Server{} = state) do

@@ -779,4 +779,26 @@ defmodule Typo.PDF.Canvas do
          :ok <- end_text(pdf),
          do: r
   end
+
+  @doc """
+  Draws given text string `this` at current text position.
+  `options` is a keyword list:
+    * `:clip` - when `true`, text is added to clipping path (defaults to `false`).
+    * `:fill` - when `true`, text is filled (defaults to `true`).
+    * `:kern` - when `true`, text is kerned (defaults to `true`).
+    * `:replacement` - specifies a replacement character to be used when any
+      characters in the original UTF-8 string can't be encoded for the font in
+      use.  Note that if the replacement also can't be encoded, then the problem
+      character is silently dropped.
+    * `:stroke` - when `true`, text is stroked (defaults to `false`).
+
+  NOTE: a font must have been previously selected using `select_font/3`.
+  """
+  @spec write_text(Typo.handle(), binary(), Keyword.t()) :: :ok | Typo.error()
+  def write_text(pdf, this, options \\ [])
+      when is_handle(pdf) and is_binary(this) and is_list(options) do
+    with :ok <- set_text_render(pdf, options),
+         :ok <- GenServer.call(pdf, {:write_text, this, options}),
+         do: :ok
+  end
 end
