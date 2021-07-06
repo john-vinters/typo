@@ -45,7 +45,7 @@ defmodule Typo.Utils.Strings do
   `options`:
     * `:bracket` - if `true` (default), encloses result in round brackets.
   """
-  @spec literal(binary(), Keyword.t()) :: nonempty_binary()
+  @spec literal(binary(), Keyword.t()) :: binary()
   def literal(this, options \\ []) do
     output = literal_apply(this, "")
 
