@@ -35,7 +35,8 @@ defmodule Typo do
             kern: number(),
             kern_sc: number(),
             space: number(),
-            width: number()
+            width: number(),
+            wx: number()
           }
         ]
   @type error :: {:error, any()}
