@@ -433,7 +433,7 @@ defmodule Typo.PDF.Server do
     ensure_text(state, fn %Server{} = state ->
       new_state =
         %Server{state | text_state: %TextState{state.text_state | rise: rise}}
-        |> append(n2s([rise, "Tr"]))
+        |> append(n2s([rise, "Ts"]))
 
       {:reply, :ok, new_state, new_state.idle_timeout}
     end)
