@@ -92,8 +92,9 @@ defmodule Typo.Utils.Strings do
   Converts a list (or individual) floats/integers/binaries to a space separated
   binary string.  Floats are formatted to 3 decimal places.
   """
-  @spec n2s(number() | binary() | {:str, binary()} | [number() | binary() | {:str, binary()}]) ::
-          binary()
+  @type n2s_item :: float() | integer() | binary() | {:str, binary()}
+  @type n2s_arg :: n2s_item() | [n2s_item()]
+  @spec n2s(n2s_arg() | maybe_improper_list(n2s_arg(), n2s_arg())) :: binary()
   def n2s([]), do: <<>>
   def n2s(f) when is_float(f), do: :erlang.float_to_binary(f, decimals: 3)
   def n2s(i) when is_integer(i), do: Integer.to_string(i)
