@@ -157,7 +157,7 @@ defmodule Typo.PDF.Server do
         _from,
         %Server{text_state: %TextState{} = ts} = state
       )
-      when is_binary(this) do
+      when is_binary(this) and is_list(options) do
     ensure_text(state, fn %Server{} = state ->
       with {:font, font} when not is_nil(font) <- {:font, ts.font},
            {:ok, new_state} <- write_text(state, this, options) do
@@ -471,7 +471,8 @@ defmodule Typo.PDF.Server do
   # writes text string at current text position.
   @spec handle_call({:write_text, String.t(), Keyword.t()}, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
-  def handle_call({:write_text, this, options}, _from, %Server{} = state) when is_binary(this) do
+  def handle_call({:write_text, this, options}, _from, %Server{} = state)
+      when is_binary(this) and is_list(options) do
     ensure_text(state, fn %Server{text_state: text_state} = state ->
       with {:font, font} when not is_nil(font) <- {:font, text_state.font},
            new_state <- move_text(state, {text_state.x, text_state.y}),
@@ -650,9 +651,13 @@ defmodule Typo.PDF.Server do
 
   # outputs text string at current text position.
   @spec write_text(Server.t(), binary(), Keyword.t()) :: {:ok, Server.t()} | Typo.error()
-  defp write_text(%Server{in_text: true, text_state: %TextState{font: f}} = state, this, options)
+  defp write_text(
+         %Server{in_text: true, text_state: %TextState{font: f} = ts} = state,
+         this,
+         options
+       )
        when is_binary(this) and is_list(options) and not is_nil(f) do
-    with {:ok, encoded} when is_list(encoded) <- Text.encode(state.text_state, this, options),
+    with {:ok, encoded} when is_list(encoded) <- Text.encode(ts, this, options),
          width when is_number(width) <- Text.get_width(encoded) do
       txt =
         Enum.reduce(encoded, [], fn item, acc ->
