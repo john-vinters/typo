@@ -181,6 +181,12 @@ defmodule Typo.PDF.Canvas do
   def get_page(pdf) when is_handle(pdf), do: GenServer.call(pdf, :get_page)
 
   @doc """
+  Returns the current text position.
+  """
+  @spec get_text_position(Typo.handle()) :: {:ok, Typo.xy()} | Typo.error()
+  def get_text_position(pdf) when is_handle(pdf), do: GenServer.call(pdf, :get_text_position)
+
+  @doc """
   Returns the width of the given string `this` using the current text state.
   `options`:
     * `:kern` - if true, the length takes into account kerning (default).

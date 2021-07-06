@@ -235,6 +235,14 @@ defmodule Typo.PDF.Server do
     {:reply, new_state, new_state, new_state.idle_timeout}
   end
 
+  # returns the current text position.
+  @spec handle_call(:get_text_position, any(), Server.t()) ::
+          {:reply, {:ok, Typo.xy()} | Typo.error(), Server.t(), timeout()}
+  def handle_call(:get_text_position, _from, %Server{text_state: ts} = state) do
+    new_state = inc_req(state)
+    {:reply, {:ok, {ts.x, ts.y}}, new_state, new_state.idle_timeout}
+  end
+
   # returns width of string given current text parameters.
   @spec handle_call({:get_width, String.t(), Keyword.t()}, any(), Server.t()) ::
           {:reply, {:ok, number()} | Typo.error(), Server.t(), timeout()}
