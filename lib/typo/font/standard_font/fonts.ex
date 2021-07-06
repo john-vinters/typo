@@ -18,32 +18,30 @@ defmodule Typo.Font.StandardFont.Fonts do
   alias Typo.Font.StandardFont
 
   # courier
-  {:ok, pcrb8a} = StandardFont.load_afm("priv/adobe/afm/courier/pcrb8a.afm")
-  {:ok, pcrbo8a} = StandardFont.load_afm("priv/adobe/afm/courier/pcrbo8a.afm")
-  {:ok, pcrr8a} = StandardFont.load_afm("priv/adobe/afm/courier/pcrr8a.afm")
-  {:ok, pcrro8a} = StandardFont.load_afm("priv/adobe/afm/courier/pcrro8a.afm")
+  {:ok, c1} = StandardFont.load_afm("priv/adobe/afm/Courier.afm")
+  {:ok, c2} = StandardFont.load_afm("priv/adobe/afm/Courier-Bold.afm")
+  {:ok, c3} = StandardFont.load_afm("priv/adobe/afm/Courier-BoldOblique.afm")
+  {:ok, c4} = StandardFont.load_afm("priv/adobe/afm/Courier-Oblique.afm")
 
   # helvetica
-  {:ok, phvb8a} = StandardFont.load_afm("priv/adobe/afm/helvetica/phvb8a.afm")
-  {:ok, phvbo8a} = StandardFont.load_afm("priv/adobe/afm/helvetica/phvbo8a.afm")
-  {:ok, phvr8a} = StandardFont.load_afm("priv/adobe/afm/helvetica/phvr8a.afm", true, 32)
-  {:ok, phvro8a} = StandardFont.load_afm("priv/adobe/afm/helvetica/phvro8a.afm", true, 96)
+  {:ok, h1} = StandardFont.load_afm("priv/adobe/afm/Helvetica.afm", true, 32)
+  {:ok, h2} = StandardFont.load_afm("priv/adobe/afm/Helvetica-Bold.afm")
+  {:ok, h3} = StandardFont.load_afm("priv/adobe/afm/Helvetica-BoldOblique.afm")
+  {:ok, h4} = StandardFont.load_afm("priv/adobe/afm/Helvetica-Oblique.afm", true, 96)
 
   # symbol
-  {:ok, psyr} = StandardFont.load_afm("priv/adobe/afm/symbol/psyr.afm", false)
+  {:ok, s1} = StandardFont.load_afm("priv/adobe/afm/Symbol.afm", false)
 
   # times
-  {:ok, ptmb8a} = StandardFont.load_afm("priv/adobe/afm/times/ptmb8a.afm")
-  {:ok, ptmbi8a} = StandardFont.load_afm("priv/adobe/afm/times/ptmbi8a.afm")
-  {:ok, ptmr8a} = StandardFont.load_afm("priv/adobe/afm/times/ptmr8a.afm")
-  {:ok, ptmri8a} = StandardFont.load_afm("priv/adobe/afm/times/ptmri8a.afm")
+  {:ok, t1} = StandardFont.load_afm("priv/adobe/afm/Times-Roman.afm")
+  {:ok, t2} = StandardFont.load_afm("priv/adobe/afm/Times-Bold.afm")
+  {:ok, t3} = StandardFont.load_afm("priv/adobe/afm/Times-BoldItalic.afm")
+  {:ok, t4} = StandardFont.load_afm("priv/adobe/afm/Times-Italic.afm")
 
   # zapfdingbats
-  {:ok, pzdr} = StandardFont.load_afm("priv/adobe/afm/zapfdingbats/pzdr.afm", false)
+  {:ok, z1} = StandardFont.load_afm("priv/adobe/afm/ZapfDingbats.afm", false)
 
-  fonts =
-    [pcrb8a, pcrbo8a, pcrr8a, pcrro8a, phvb8a, phvbo8a, phvr8a, phvro8a, psyr] ++
-      [ptmb8a, ptmbi8a, ptmr8a, ptmri8a, pzdr]
+  fonts = [c1, c2, c3, c4, h1, h2, h3, h4, s1, t1, t2, t3, t4, z1]
 
   std_fonts =
     fonts
