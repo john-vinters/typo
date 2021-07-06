@@ -235,6 +235,21 @@ defmodule Typo.PDF.Server do
     {:reply, new_state, new_state, new_state.idle_timeout}
   end
 
+  # returns width of string given current text parameters.
+  @spec handle_call({:get_width, String.t(), Keyword.t()}, any(), Server.t()) ::
+          {:reply, {:ok, number()} | Typo.error(), Server.t(), timeout()}
+  def handle_call({:get_width, this, options}, _from, %Server{} = state)
+      when is_binary(this) and is_list(options) do
+    ensure_text(state, fn %Server{} = state ->
+      with {:ok, encoded} when is_list(encoded) <- Text.encode(state.text_state, this, options),
+           width when is_number(width) <- Text.get_width(encoded) do
+        {:reply, {:ok, width}, state, state.idle_timeout}
+      else
+        {:error, _} = err -> {:reply, err, state, state.idle_timeout}
+      end
+    end)
+  end
+
   # loads an image into the server.
   @spec handle_call({:load_image, Typo.image_id(), String.t()}, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
