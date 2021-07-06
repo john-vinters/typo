@@ -39,7 +39,13 @@ defmodule Typo.Utils.Text do
   def encode(%TextState{font: nil}, _this, _options), do: {:error, :no_font_selected}
 
   def encode(
-        %TextState{font: %StandardFont{} = font, character_space: cs, size: sz, word_space: ws},
+        %TextState{
+          font: %StandardFont{} = font,
+          character_space: cs,
+          horizontal_scale: hs,
+          size: sz,
+          word_space: ws
+        },
         this,
         options
       )
@@ -47,6 +53,7 @@ defmodule Typo.Utils.Text do
     kern? = Keyword.get(options, :kern, true)
     replacement = Keyword.get(options, :replacement, "")
     sc = sz / 1000.0
+    hsc = hs / 100.0
 
     {_, result} =
       this
@@ -59,16 +66,19 @@ defmodule Typo.Utils.Text do
           # for now, just drop the problematic character...
           {codepoint, result}
         else
-          widths = width * sc
+          widths = width * sc * hsc
 
           case codepoint do
             " " ->
-              c = %{type: :space, glyph: " ", kern: 0, kern_sc: 0, space: cs + ws, width: widths}
+              sp = (cs + ws) * hsc
+              c = %{type: :space, glyph: " ", kern: 0, kern_sc: 0, space: sp, width: widths}
               {codepoint, [c] ++ result}
 
             ch ->
               k = if kern?, do: Map.get(font.kerning, {prev, codepoint}, 0), else: 0
-              c = %{type: :glyph, glyph: ch, kern: k, kern_sc: k * sc, space: cs, width: widths}
+              ksc = k * sc * hsc
+              sp = cs * hsc
+              c = %{type: :glyph, glyph: ch, kern: k, kern_sc: ksc, space: sp, width: widths}
               {codepoint, [c] ++ result}
           end
         end
