@@ -244,9 +244,9 @@ defmodule Typo.PDF.Server do
   end
 
   # returns width of string given current text parameters.
-  @spec handle_call({:get_width, String.t(), Keyword.t()}, any(), Server.t()) ::
+  @spec handle_call({:get_text_width, String.t(), Keyword.t()}, any(), Server.t()) ::
           {:reply, {:ok, number()} | Typo.error(), Server.t(), timeout()}
-  def handle_call({:get_width, this, options}, _from, %Server{} = state)
+  def handle_call({:get_text_width, this, options}, _from, %Server{} = state)
       when is_binary(this) and is_list(options) do
     ensure_text(state, fn %Server{} = state ->
       with {:ok, encoded} when is_list(encoded) <- Text.encode(state.text_state, this, options),

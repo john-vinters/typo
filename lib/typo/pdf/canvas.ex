@@ -193,9 +193,9 @@ defmodule Typo.PDF.Canvas do
 
   NOTE: must be within a text block and a font must have been selected first.
   """
-  @spec get_width(Typo.handle(), String.t(), Keyword.t()) :: {:ok, number()}
-  def get_width(pdf, this, options \\ []) when is_handle(pdf) and is_binary(this),
-    do: GenServer.call(pdf, {:get_width, this, options})
+  @spec get_text_width(Typo.handle(), String.t(), Keyword.t()) :: {:ok, number()}
+  def get_text_width(pdf, this, options \\ []) when is_handle(pdf) and is_binary(this),
+    do: GenServer.call(pdf, {:get_text_width, this, options})
 
   @doc """
   Places a loaded image `image_id` onto the page at coordinates `p` with
