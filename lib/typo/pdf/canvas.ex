@@ -114,8 +114,8 @@ defmodule Typo.PDF.Canvas do
       when is_handle(pdf) and is_number(x) and is_number(y) and is_binary(this) and
              is_list(options) do
     with :ok <- move_text_to(pdf, p),
-         :ok <- GenServer.call(pdf, {:draw_text, this, options}),
          :ok <- set_text_render(pdf, options),
+         :ok <- GenServer.call(pdf, {:draw_text, this, options}),
          do: :ok
   end
 
