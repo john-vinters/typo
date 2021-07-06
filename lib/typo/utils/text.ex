@@ -66,19 +66,21 @@ defmodule Typo.Utils.Text do
           # for now, just drop the problematic character...
           {codepoint, result}
         else
-          widths = width * sc * hsc
+          w = width * sc * hsc
 
           case codepoint do
             " " ->
               sp = (cs + ws) * hsc
-              c = %{type: :space, glyph: " ", kern: 0, kern_sc: 0, space: sp, width: widths}
+              wx = w + sp
+              c = %{type: :space, glyph: " ", kern: 0, kern_sc: 0, space: sp, width: w, wx: wx}
               {codepoint, [c] ++ result}
 
             ch ->
               k = if kern?, do: Map.get(font.kerning, {prev, codepoint}, 0), else: 0
               ksc = k * sc * hsc
               sp = cs * hsc
-              c = %{type: :glyph, glyph: ch, kern: k, kern_sc: ksc, space: sp, width: widths}
+              wx = w + sp - ksc
+              c = %{type: :glyph, glyph: ch, kern: k, kern_sc: ksc, space: sp, width: w, wx: wx}
               {codepoint, [c] ++ result}
           end
         end
@@ -93,7 +95,7 @@ defmodule Typo.Utils.Text do
   @spec get_width(Typo.encoded_text()) :: number()
   def get_width(this) when is_list(this) do
     Enum.reduce(this, 0, fn item, acc ->
-      acc + item.width + item.space - item.kern_sc
+      acc + item.wx
     end)
   end
 end
