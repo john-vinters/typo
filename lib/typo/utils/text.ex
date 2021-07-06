@@ -63,31 +63,28 @@ defmodule Typo.Utils.Text do
 
           case codepoint do
             " " ->
-              c = %{type: :space, glyph: " ", kern: 0, space: ws, width: widths}
+              c = %{type: :space, glyph: " ", kern: 0, kern_sc: 0, space: cs + ws, width: widths}
               {codepoint, [c] ++ result}
 
             ch ->
               kern = if kern?, do: Map.get(font.kerning, {prev, codepoint}, 0), else: 0
-              c = %{type: :glyph, glyph: ch, kern: kern, space: cs, width: widths}
+
+              c = %{
+                type: :glyph,
+                glyph: ch,
+                kern: kern,
+                kern_sc: kern * scale,
+                space: cs,
+                width: widths
+              }
+
               {codepoint, [c] ++ result}
           end
         end
       end)
-      |> encode_remove_last_spacing()
 
     {:ok, Enum.reverse(result)}
   end
-
-  # sets space to '0' for the last glyph (as we generate the list in reverse
-  # order, this is done to the first item in the list).
-  @spec encode_remove_last_spacing({binary(), Typo.encoded_text()}) ::
-          {binary(), Typo.encoded_text()}
-  defp encode_remove_last_spacing({r, [h | t]}) do
-    nh = Map.put(h, :space, 0)
-    {r, [nh | t]}
-  end
-
-  defp encode_remove_last_spacing(r), do: r
 
   @doc """
   Given the encoded text `this`, returns the string width.
@@ -95,7 +92,7 @@ defmodule Typo.Utils.Text do
   @spec get_width(Typo.encoded_text()) :: number()
   def get_width(this) when is_list(this) do
     Enum.reduce(this, 0, fn item, acc ->
-      acc + item.width + item.space - item.kern
+      acc + item.width + item.space - item.kern_sc
     end)
   end
 end
