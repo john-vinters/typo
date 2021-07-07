@@ -22,36 +22,44 @@ defmodule Typo.Utils.Units do
   @doc """
   Converts value `this` in cm to PDF points.
   """
-  @spec cm(number()) :: float()
+  @spec cm(number() | Typo.xy()) :: float() | Typo.xy()
   def cm(this) when is_number(this), do: this * (72.0 / 2.54)
+  def cm({x, y}) when is_number(x) and is_number(y), do: {x * (72.0 / 2.54), y * (72.0 / 2.54)}
 
   @doc """
   Converts value `this` in feet to PDF points.
   """
-  @spec foot(number()) :: float()
+  @spec foot(number() | Typo.xy()) :: float() | Typo.xy()
   def foot(this) when is_number(this), do: this * 864.0
+  def foot({x, y}) when is_number(x) and is_number(y), do: {x * 864.0, y * 864.0}
 
   @doc """
   Converts value `this` in inches to PDF points.
   """
-  @spec inch(number()) :: float()
+  @spec inch(number() | Typo.xy()) :: float() | Typo.xy()
   def inch(this) when is_number(this), do: this * 72.0
+  def inch({x, y}) when is_number(x) and is_number(y), do: {x * 72.0, y * 72.0}
 
   @doc """
   Converts value `this` in metres to PDF points.
   """
-  @spec m(number()) :: float()
+  @spec m(number() | Typo.xy()) :: float() | Typo.xy()
   def m(this) when is_number(this), do: this * 100.0 * (72.0 / 2.54)
+
+  def m({x, y}) when is_number(x) and is_number(y),
+    do: {x * 100.0 * (72.0 / 2.54), y * 100.0 * (72.0 / 2.54)}
 
   @doc """
   Converts value `this` in mm to PDF points.
   """
-  @spec mm(number()) :: float()
+  @spec mm(number() | Typo.xy()) :: float() | Typo.xy()
   def mm(this) when is_number(this), do: this * (72.0 / 25.4)
+  def mm({x, y}) when is_number(x) and is_number(y), do: {x * (72.0 / 25.4), y * (72.0 / 25.4)}
 
   @doc """
   Converts value `this` in yards to PDF points.
   """
-  @spec yard(number()) :: float()
+  @spec yard(number() | Typo.xy()) :: float() | Typo.xy()
   def yard(this) when is_number(this), do: this * 2592.0
+  def yard({x, y}) when is_number(x) and is_number(y), do: {x * 2592.0, y * 2592.0}
 end
