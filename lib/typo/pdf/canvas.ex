@@ -98,6 +98,10 @@ defmodule Typo.PDF.Canvas do
   @doc """
   Draws given text string `this` at text position `p`.
   `options` is a keyword list:
+    * `:align` - may be `:left` (default), `:right`, `:centre` or `:center`.
+      When `:left`, the position `p` specifies the text start position.  When `:right`,
+      the position `p` specifies the text end position, and with `:centre`, `p`
+      specifies the centre point of the text.
     * `:clip` - when `true`, text is added to clipping path (defaults to `false`).
     * `:fill` - when `true`, text is filled (defaults to `true`).
     * `:kern` - when `true`, text is kerned (defaults to `true`).
@@ -113,10 +117,26 @@ defmodule Typo.PDF.Canvas do
   def draw_text(pdf, {x, y} = p, this, options \\ [])
       when is_handle(pdf) and is_number(x) and is_number(y) and is_binary(this) and
              is_list(options) do
-    with :ok <- move_text(pdf, p),
+    align = Keyword.get(options, :align, :left)
+
+    with {:ok, {_x, _y} = p2} <- draw_text_align(pdf, p, this, options, align),
+         :ok <- move_text(pdf, p2),
          :ok <- set_text_render(pdf, options),
          :ok <- GenServer.call(pdf, {:draw_text, this, options}),
          do: :ok
+  end
+
+  defp draw_text_align(pdf, {_x, _y} = p, str, options, :center),
+    do: draw_text_align(pdf, p, str, options, :centre)
+
+  defp draw_text_align(pdf, {x, y}, str, options, :centre) do
+    with {:ok, length} = get_text_width(pdf, str, options), do: {:ok, {x - length / 2, y}}
+  end
+
+  defp draw_text_align(_pdf, {_x, _y} = p, _str, _options, :left), do: {:ok, p}
+
+  defp draw_text_align(pdf, {x, y}, str, options, :right) do
+    with {:ok, length} = get_text_width(pdf, str, options), do: {:ok, {x - length, y}}
   end
 
   @doc """
