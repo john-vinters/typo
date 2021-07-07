@@ -32,6 +32,8 @@ defmodule Typo.Font.StandardFont do
           is_fixed_pitch: boolean(),
           italic_angle: number(),
           kerning: %{optional({binary(), binary()}) => number()},
+          stem_h: number(),
+          stem_v: number(),
           underline_position: number(),
           underline_thickness: number(),
           x_height: number(),
@@ -47,6 +49,8 @@ defmodule Typo.Font.StandardFont do
             is_fixed_pitch: false,
             italic_angle: 0.0,
             kerning: %{},
+            stem_h: 0,
+            stem_v: 0,
             underline_position: 0,
             underline_thickness: 0,
             x_height: 0,
@@ -124,6 +128,12 @@ defmodule Typo.Font.StandardFont do
 
   defp process_line(%StandardFont{} = font, <<"ItalicAngle", rest::binary>>, _),
     do: %StandardFont{font | italic_angle: parse_number(rest)}
+
+  defp process_line(%StandardFont{} = font, <<"StdHW", rest::binary>>, _),
+    do: %StandardFont{font | stem_h: parse_number(rest)}
+
+  defp process_line(%StandardFont{} = font, <<"StdVW", rest::binary>>, _),
+    do: %StandardFont{font | stem_v: parse_number(rest)}
 
   defp process_line(%StandardFont{} = font, <<"UnderlinePosition", rest::binary>>, _),
     do: %StandardFont{font | underline_position: parse_number(rest)}
