@@ -21,6 +21,7 @@ defmodule Typo.Utils.TextState do
 
   @type t :: %__MODULE__{
           font: nil | Typo.Font.StandardFont.t(),
+          font_id: nil | integer(),
           character_space: number(),
           horizontal_scale: number(),
           leading: number(),
@@ -32,6 +33,7 @@ defmodule Typo.Utils.TextState do
         }
 
   defstruct font: nil,
+            font_id: nil,
             character_space: 0,
             horizontal_scale: 100,
             leading: 12,
