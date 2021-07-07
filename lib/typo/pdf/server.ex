@@ -658,6 +658,8 @@ defmodule Typo.PDF.Server do
          width when is_number(width) <- Text.get_width(encoded),
          {:ok, x} <- write_text_align(width, ts.x, Keyword.get(options, :align, :left)),
          new_state <- move_text(state, {x, ts.y}) do
+      newline? = Keyword.get(options, :newline, false)
+
       txt =
         Enum.reduce(encoded, [], fn item, acc ->
           case Map.get(item, :kern, 0) do
@@ -667,7 +669,12 @@ defmodule Typo.PDF.Server do
         end)
         |> Enum.reverse()
 
-      new_text_state = %TextState{new_state.text_state | x: x + width}
+      new_text_state =
+        case newline? do
+          true -> %TextState{new_state.text_state | x: ts.x, y: ts.y - ts.leading}
+          false -> %TextState{new_state.text_state | x: x + width}
+        end
+
       new_state = %Server{new_state | text_state: new_text_state}
       {:ok, append(new_state, n2s(["[", txt, "] TJ"]))}
     end

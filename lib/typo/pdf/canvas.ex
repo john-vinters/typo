@@ -105,6 +105,8 @@ defmodule Typo.PDF.Canvas do
     * `:clip` - when `true`, text is added to clipping path (defaults to `false`).
     * `:fill` - when `true`, text is filled (defaults to `true`).
     * `:kern` - when `true`, text is kerned (defaults to `true`).
+    * `:newline` - when `true`, advances the current text position to start of next
+      line after the string is output (defaults to `false`).
     * `:replacement` - specifies a replacement character to be used when any
       characters in the original UTF-8 string can't be encoded for the font in
       use.  Note that if the replacement also can't be encoded, then the problem
@@ -812,6 +814,8 @@ defmodule Typo.PDF.Canvas do
     * `:clip` - when `true`, text is added to clipping path (defaults to `false`).
     * `:fill` - when `true`, text is filled (defaults to `true`).
     * `:kern` - when `true`, text is kerned (defaults to `true`).
+    * `:newline` - when `true`, advances the current text position to start of next
+      line after the string is output (defaults to `false`).
     * `:replacement` - specifies a replacement character to be used when any
       characters in the original UTF-8 string can't be encoded for the font in
       use.  Note that if the replacement also can't be encoded, then the problem
@@ -819,6 +823,8 @@ defmodule Typo.PDF.Canvas do
     * `:stroke` - when `true`, text is stroked (defaults to `false`).
 
   NOTE: a font must have been previously selected using `select_font/3`.
+
+  NOTE: this function doesn't wrap the text if it goes past the edge of the page.
   """
   @spec write_text(Typo.handle(), binary(), Keyword.t()) :: :ok | Typo.error()
   def write_text(pdf, this, options \\ [])
