@@ -149,26 +149,6 @@ defmodule Typo.PDF.Server do
     {:reply, {:error, :graphics_stack_not_empty}, new_state, new_state.idle_timeout}
   end
 
-  # draws text string.
-  @spec handle_call({:draw_text, String.t(), Keyword.t()}, any(), Server.t()) ::
-          {:reply, :ok | Typo.error(), Server.t(), timeout()}
-  def handle_call(
-        {:draw_text, this, options},
-        _from,
-        %Server{text_state: %TextState{} = ts} = state
-      )
-      when is_binary(this) and is_list(options) do
-    ensure_text(state, fn %Server{} = state ->
-      with {:font, font} when not is_nil(font) <- {:font, ts.font},
-           {:ok, new_state} <- write_text(state, this, options) do
-        {:reply, :ok, new_state, new_state.idle_timeout}
-      else
-        {:error, _} = err -> {:reply, err, state, state.idle_timeout}
-        {:font, nil} -> {:reply, {:error, :no_font_selected}, state, state.idle_timeout}
-      end
-    end)
-  end
-
   # ends a text block.
   @spec handle_call(:end_text, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
@@ -483,8 +463,7 @@ defmodule Typo.PDF.Server do
       when is_binary(this) and is_list(options) do
     ensure_text(state, fn %Server{text_state: text_state} = state ->
       with {:font, font} when not is_nil(font) <- {:font, text_state.font},
-           new_state <- move_text(state, {text_state.x, text_state.y}),
-           {:ok, new_state} <- write_text(new_state, this, options) do
+           {:ok, new_state} <- write_text(state, this, options) do
         {:reply, :ok, new_state, new_state.idle_timeout}
       else
         {:error, _} = err -> {:reply, err, state, state.idle_timeout}
@@ -545,6 +524,16 @@ defmodule Typo.PDF.Server do
       set_media_box(state, page, size)
       |> inc_req()
 
+    {:noreply, new_state, new_state.idle_timeout}
+  end
+
+  # sets text position (but doesn't change PDF output).
+  @spec handle_cast({:set_text_position, {number(), number()}}, Server.t()) ::
+          {:noreply, Server.t(), timeout()}
+  def handle_cast({:set_text_position, {x, y}}, %Server{} = state)
+      when is_number(x) and is_number(y) do
+    new_text_state = %TextState{state.text_state | x: x, y: y}
+    new_state = %Server{state | text_state: new_text_state} |> inc_req()
     {:noreply, new_state, new_state.idle_timeout}
   end
 
@@ -666,7 +655,9 @@ defmodule Typo.PDF.Server do
        )
        when is_binary(this) and is_list(options) and not is_nil(f) do
     with {:ok, encoded} when is_list(encoded) <- Text.encode(ts, this, options),
-         width when is_number(width) <- Text.get_width(encoded) do
+         width when is_number(width) <- Text.get_width(encoded),
+         {:ok, x} <- write_text_align(width, ts.x, Keyword.get(options, :align, :left)),
+         new_state <- move_text(state, {x, ts.y}) do
       txt =
         Enum.reduce(encoded, [], fn item, acc ->
           case Map.get(item, :kern, 0) do
@@ -676,9 +667,14 @@ defmodule Typo.PDF.Server do
         end)
         |> Enum.reverse()
 
-      new_text_state = %TextState{state.text_state | x: state.text_state.x + width}
-      new_state = %Server{state | text_state: new_text_state}
+      new_text_state = %TextState{new_state.text_state | x: x + width}
+      new_state = %Server{new_state | text_state: new_text_state}
       {:ok, append(new_state, n2s(["[", txt, "] TJ"]))}
     end
   end
+
+  defp write_text_align(width, x, :center), do: write_text_align(width, x, :centre)
+  defp write_text_align(width, x, :centre), do: {:ok, x - width / 2}
+  defp write_text_align(_width, x, :left), do: {:ok, x}
+  defp write_text_align(width, x, :right), do: {:ok, x - width}
 end
