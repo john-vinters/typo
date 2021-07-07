@@ -443,6 +443,13 @@ defmodule Typo.PDF.Canvas do
   end
 
   @doc """
+  Sets the font size to `size`.
+  """
+  @spec set_font_size(Typo.handle(), number()) :: :ok | Typo.error()
+  def set_font_size(pdf, size) when is_handle(pdf) and is_number(size) and size >= 0,
+    do: GenServer.call(pdf, {:set_font_size, size})
+
+  @doc """
   Sets text horizontal scaling to percentage of normal width.
   """
   @spec set_horizontal_scale(Typo.handle(), number()) :: :ok

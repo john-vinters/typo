@@ -319,6 +319,7 @@ defmodule Typo.PDF.Server do
         new_ts = %TextState{
           ns.text_state
           | font: font,
+            font_id: fid,
             size: size,
             character_space: 0,
             horizontal_scale: 100,
@@ -344,6 +345,20 @@ defmodule Typo.PDF.Server do
       new_state =
         %Server{state | text_state: %TextState{state.text_state | character_space: spacing}}
         |> append(n2s([spacing, "Tc"]))
+
+      {:reply, :ok, new_state, new_state.idle_timeout}
+    end)
+  end
+
+  # sets font size.
+  @spec handle_call({:set_font_size, number()}, any(), Server.t()) ::
+          {:reply, :ok | Typo.error(), Server.t(), timeout()}
+  def handle_call({:set_font_size, size}, _from, %Server{text_state: ts} = state)
+      when is_number(size) and size >= 0 do
+    ensure_text(state, fn %Server{} = state ->
+      new_state =
+        %Server{state | text_state: %TextState{ts | size: size}}
+        |> append(n2s(["/F#{ts.font_id}", size, "Tf"]))
 
       {:reply, :ok, new_state, new_state.idle_timeout}
     end)
