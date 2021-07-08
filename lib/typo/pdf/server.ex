@@ -30,7 +30,8 @@ defmodule Typo.PDF.Server do
           compression: 0..9,
           current_page: integer(),
           font_id: pos_integer(),
-          font_ids: map(),
+          font_ids: %{optional(String.t()) => pos_integer()},
+          font_names: %{optional(pos_integer()) => String.t()},
           font_usage: map(),
           fonts: map(),
           geometry: map(),
@@ -54,6 +55,7 @@ defmodule Typo.PDF.Server do
             current_page: 1,
             font_id: 1,
             font_ids: %{},
+            font_names: %{},
             font_usage: %{},
             fonts: %{},
             geometry: %{:default => %{:media_box => {0, 0, 595, 842}}},
@@ -606,8 +608,18 @@ defmodule Typo.PDF.Server do
   def register_font(%Server{} = state, filename) when is_binary(filename) do
     with {:ok, %TrueType{} = font} <- TrueType.load(filename) do
       ps_name = font.postscript_name
-      new_fonts = Map.put(state.fonts, ps_name, font)
-      new_state = %Server{state | fonts: new_fonts}
+      new_fonts = Map.put(state.fonts, state.font_id, font)
+      new_font_ids = Map.put(state.font_ids, ps_name, state.font_id)
+      new_font_names = Map.put(state.font_names, state.font_id, ps_name)
+
+      new_state = %Server{
+        state
+        | font_id: state.font_id + 1,
+          font_ids: new_font_ids,
+          font_names: new_font_names,
+          fonts: new_fonts
+      }
+
       {:ok, new_state, ps_name}
     end
   end
@@ -650,12 +662,14 @@ defmodule Typo.PDF.Server do
 
     Enum.reduce(std, state, fn {name, font}, acc_state ->
       new_font_ids = Map.put(acc_state.font_ids, name, acc_state.font_id)
+      new_font_names = Map.put(acc_state.font_names, acc_state.font_id, name)
       new_fonts = Map.put(acc_state.fonts, acc_state.font_id, font)
 
       %Server{
         acc_state
         | font_id: acc_state.font_id + 1,
           font_ids: new_font_ids,
+          font_names: new_font_names,
           fonts: new_fonts
       }
     end)
