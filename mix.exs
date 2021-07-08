@@ -35,7 +35,8 @@ defmodule Typo.MixProject do
 
   defp deps do
     [
-      {:dialyxir, "~> 1.1", only: :dev, runtime: false}
+      {:dialyxir, "~> 1.1", only: :dev, runtime: false},
+      {:exttf, path: "../exttf"}
     ]
   end
 end

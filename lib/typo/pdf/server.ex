@@ -238,6 +238,19 @@ defmodule Typo.PDF.Server do
     end)
   end
 
+  # loads a TrueType font into the server.
+  @spec handle_call({:load_font, String.t()}, any(), Server.t()) ::
+          {:reply, {:ok, String.t()} | Typo.error(), Server.t(), timeout()}
+  def handle_call({:load_font, filename}, _from, %Server{} = state) when is_binary(filename) do
+    new_state = inc_req(state)
+
+    with {:ok, new_state, font_name} <- register_font(state, filename) do
+      {:reply, {:ok, font_name}, new_state, new_state.idle_timeout}
+    else
+      {:error, _} = err -> {:reply, err, new_state, new_state.idle_timeout}
+    end
+  end
+
   # loads an image into the server.
   @spec handle_call({:load_image, Typo.image_id(), String.t()}, any(), Server.t()) ::
           {:reply, :ok | Typo.error(), Server.t(), timeout()}
@@ -587,7 +600,19 @@ defmodule Typo.PDF.Server do
     append(state, n2s([1, 0, 0, 1, x, y, "Tm"]))
   end
 
-  # loads an registers an image.
+  # loads and registers a TrueType font - the font is registered using the font's
+  # Postscript name (which is embedded in the font).
+  @spec register_font(Server.t(), String.t()) :: {:ok, Server.t(), String.t()} | Typo.error()
+  def register_font(%Server{} = state, filename) when is_binary(filename) do
+    with {:ok, %TrueType{} = font} <- TrueType.load(filename) do
+      ps_name = font.postscript_name
+      new_fonts = Map.put(state.fonts, ps_name, font)
+      new_state = %Server{state | fonts: new_fonts}
+      {:ok, new_state, ps_name}
+    end
+  end
+
+  # loads and registers an image.
   @spec register_image(Server.t(), Typo.image_id(), String.t()) ::
           {:ok, Server.t()} | Typo.error()
   defp register_image(%Server{} = state, image_id, filename)

@@ -51,6 +51,14 @@ defmodule Typo.PDF do
   def get_state(pdf) when is_handle(pdf), do: GenServer.call(pdf, :get_state)
 
   @doc """
+  Loads TrueType font `filename` into the PDF server.
+  Returns `{:ok, font_name}` if successful, `{:error, reason}` otherwise.
+  """
+  @spec load_font(Typo.handle(), String.t()) :: {:ok, String.t()} | Typo.error()
+  def load_font(pdf, filename) when is_handle(pdf) and is_binary(filename),
+    do: GenServer.call(pdf, {:load_font, filename})
+
+  @doc """
   Sets compression level (0 = None, Fastest .. 9 = Maximum, Slowest).
   """
   @spec set_compression(Typo.handle(), 0..9) :: :ok
