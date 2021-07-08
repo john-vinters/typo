@@ -20,7 +20,7 @@ defmodule Typo.Utils.TextState do
   """
 
   @type t :: %__MODULE__{
-          font: nil | Typo.Font.StandardFont.t(),
+          font: nil | Typo.Font.StandardFont.t() | TrueType.t(),
           font_id: nil | integer(),
           character_space: number(),
           horizontal_scale: number(),
