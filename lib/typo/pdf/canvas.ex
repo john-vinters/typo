@@ -444,6 +444,9 @@ defmodule Typo.PDF.Canvas do
 
   @doc """
   Sets the font size to `size`.
+
+  NOTE: a font must have been previously selected with `select_font/3` in the
+  same text block.
   """
   @spec set_font_size(Typo.handle(), number()) :: :ok | Typo.error()
   def set_font_size(pdf, size) when is_handle(pdf) and is_number(size) and size >= 0,
