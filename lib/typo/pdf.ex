@@ -59,6 +59,15 @@ defmodule Typo.PDF do
     do: GenServer.call(pdf, {:load_font, filename})
 
   @doc """
+  Loads an image `filename` into the PDF server with given `image_id`.
+  Returns `:ok` if successful, `{:error, reason}` otherwise.
+  """
+  @spec load_image(Typo.handle(), String.t(), Typo.image_id()) :: :ok | Typo.error()
+  def load_image(pdf, filename, image_id)
+      when is_handle(pdf) and is_binary(filename) and is_image_id(image_id),
+      do: GenServer.call(pdf, {:load_image, image_id, filename})
+
+  @doc """
   Sets compression level (0 = None, Fastest .. 9 = Maximum, Slowest).
   """
   @spec set_compression(Typo.handle(), 0..9) :: :ok

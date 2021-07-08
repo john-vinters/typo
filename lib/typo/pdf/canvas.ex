@@ -275,15 +275,6 @@ defmodule Typo.PDF.Canvas do
   end
 
   @doc """
-  Loads an image `filename` into the PDF server with given `image_id`.
-  Returns `:ok` if successful, `{:error, reason}` otherwise.
-  """
-  @spec load_image(Typo.handle(), String.t(), Typo.image_id()) :: :ok | Typo.error()
-  def load_image(pdf, filename, image_id)
-      when is_handle(pdf) and is_binary(filename) and is_image_id(image_id),
-      do: GenServer.call(pdf, {:load_image, image_id, filename})
-
-  @doc """
   Moves the current graphics position to `p`, which also begins a new subpath.
   """
   @spec move(Typo.handle(), Typo.xy()) :: :ok
