@@ -29,6 +29,16 @@ defmodule Typo.PDF do
   def get_compression(pdf) when is_handle(pdf), do: GenServer.call(pdf, :get_compression)
 
   @doc """
+  Fetches the list of loaded fonts from the PDF server.
+  Returns `{:ok, [{font_name, font_type}]}` if successful, where `font_name` is
+  the registered name of the font (for use with `Typo.PDF.Canvas.select_font/3`),
+  and `font_type` is either `:standard` for a built-in font, or `:true_type` for
+  a loaded TrueType font.
+  """
+  @spec get_fonts(Typo.handle()) :: {:ok, Typo.font_list()} | Typo.error()
+  def get_fonts(pdf) when is_handle(pdf), do: GenServer.call(pdf, :get_fonts)
+
+  @doc """
   Gets document metadata associated with `key`, which should be one of:
     * `"Author"`
     * `"Creator"`

@@ -41,6 +41,7 @@ defmodule Typo do
         ]
   @type error :: {:error, any()}
   @type font_id :: atom() | binary() | integer()
+  @type font_list :: [{String.t(), :standard | :true_type}]
   @type handle :: pid()
   @type image_id :: atom() | binary() | integer()
   @type image_options :: [{:height, number()} | {:rotate, number()} | {:width, number()}]

@@ -172,6 +172,26 @@ defmodule Typo.PDF.Server do
     {:reply, {:ok, new_state.compression}, new_state, new_state.idle_timeout}
   end
 
+  # returns the list of loaded fonts.
+  @spec handle_call(:get_fonts, any(), Server.t()) ::
+          {:reply, {:ok, Typo.font_list()} | Typo.error(), Server.t(), timeout()}
+  def handle_call(:get_fonts, _from, %Server{} = state) do
+    new_state = inc_req(state)
+
+    font_list =
+      Enum.map(new_state.fonts, fn {key, value} ->
+        type =
+          case value do
+            %StandardFont{} -> :standard
+            %TrueType{} -> :true_type
+          end
+
+        {Map.get(new_state.font_names, key, "Unknown"), type}
+      end)
+
+    {:reply, {:ok, font_list}, new_state, new_state.idle_timeout}
+  end
+
   # returns size of a loaded image.
   @spec handle_call({:get_image_size, Typo.image_id()}, any(), Server.t()) ::
           {:reply, {:ok, {number(), number()}} | Typo.error(), Server.t(), timeout()}
