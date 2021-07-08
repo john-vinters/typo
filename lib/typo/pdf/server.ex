@@ -356,11 +356,15 @@ defmodule Typo.PDF.Server do
   def handle_call({:set_font_size, size}, _from, %Server{text_state: ts} = state)
       when is_number(size) and size >= 0 do
     ensure_text(state, fn %Server{} = state ->
-      new_state =
-        %Server{state | text_state: %TextState{ts | size: size}}
-        |> append(n2s(["/F#{ts.font_id}", size, "Tf"]))
+      with {:fid, font_id} when is_integer(font_id) <- {:fid, ts.font_id} do
+        new_state =
+          %Server{state | text_state: %TextState{ts | size: size}}
+          |> append(n2s(["/F#{ts.font_id}", size, "Tf"]))
 
-      {:reply, :ok, new_state, new_state.idle_timeout}
+        {:reply, :ok, new_state, new_state.idle_timeout}
+      else
+        {:fid, nil} -> {:reply, {:error, :no_font_selected}, state, state.idle_timeout}
+      end
     end)
   end
 
