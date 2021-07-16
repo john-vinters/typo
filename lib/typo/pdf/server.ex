@@ -21,7 +21,7 @@ defmodule Typo.PDF.Server do
 
   import Typo.Utils.Guards
   import Typo.Utils.Strings, only: [n2s: 1]
-  alias Typo.Font.StandardFont
+  alias Typo.Font.{StandardFont, TrueTypeFont}
   alias Typo.Image.{JPEG, PNG}
   alias Typo.PDF.{Server, Writer}
   alias Typo.Utils.{Text, TextState}
@@ -183,7 +183,7 @@ defmodule Typo.PDF.Server do
         type =
           case value do
             %StandardFont{} -> :standard
-            %TrueType{} -> :true_type
+            %TrueTypeFont{} -> :true_type
           end
 
         {Map.get(new_state.font_names, key, "Unknown"), type}
@@ -627,8 +627,10 @@ defmodule Typo.PDF.Server do
   @spec register_font(Server.t(), String.t()) :: {:ok, Server.t(), String.t()} | Typo.error()
   def register_font(%Server{} = state, filename) when is_binary(filename) do
     with {:ok, %TrueType{} = font} <- TrueType.load(filename) do
+      gu = :ets.new(:glyph_usage, [:ordered_set, :private])
+      f = %TrueTypeFont{font: font, glyph_usage: gu}
       ps_name = font.postscript_name
-      new_fonts = Map.put(state.fonts, state.font_id, font)
+      new_fonts = Map.put(state.fonts, state.font_id, f)
       new_font_ids = Map.put(state.font_ids, ps_name, state.font_id)
       new_font_names = Map.put(state.font_names, state.font_id, ps_name)
 
