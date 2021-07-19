@@ -58,7 +58,7 @@ defmodule Typo.PDF.Writer do
   @doc """
   Returns a string literal in a suitable form for inclusion in a dict.
   """
-  @spec literal(String.t()) :: {:raw, binary()}
+  @spec literal(String.t()) :: {:literal, binary()}
   def literal(str) when is_binary(str), do: {:literal, str}
 
   @doc """
