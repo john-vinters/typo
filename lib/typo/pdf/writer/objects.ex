@@ -63,6 +63,9 @@ defmodule Typo.PDF.Writer.Objects do
   defp out_value(%Writer{} = w, value, _indent) when is_binary(value),
     do: write(w, Strings.name(value))
 
+  defp out_value(%Writer{} = w, {:literal, value}, _indent) when is_binary(value),
+    do: write(w, Strings.literal(value))
+
   defp out_value(%Writer{} = w, {:ptr, value}, _indent) when is_binary(value),
     do: write(w, value)
 

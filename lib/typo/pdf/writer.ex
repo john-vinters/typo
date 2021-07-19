@@ -56,6 +56,12 @@ defmodule Typo.PDF.Writer do
   end
 
   @doc """
+  Returns a string literal in a suitable form for inclusion in a dict.
+  """
+  @spec literal(String.t()) :: {:raw, binary()}
+  def literal(str) when is_binary(str), do: {:literal, str}
+
+  @doc """
   Creates and reigsters a new object.  The object id header is writter to the
   PDF output file.  Returns `{:ok, writer}` if successful, `{:error, reason}`
   otherwise.  After a successful write, the `oid` field of the writer contains
