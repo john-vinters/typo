@@ -81,10 +81,6 @@ defmodule Typo.Utils.Strings do
   defp literal_apply(<<13::8, rest::binary>>, prefix),
     do: <<prefix::binary, ?\\::8, ?r::8, literal_apply(rest, prefix)::binary>>
 
-  defp literal_apply(<<ch::8, rest::binary>>, prefix) when ch < 32 or ch > 126 do
-    <<prefix::binary, ?\\::8, octal(ch)::binary, literal_apply(rest, prefix)::binary>>
-  end
-
   defp literal_apply(<<ch::8, rest::binary>>, prefix),
     do: <<prefix::binary, ch::8, literal_apply(rest, prefix)::binary>>
 
