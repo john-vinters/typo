@@ -173,7 +173,8 @@ defmodule Typo.Utils.Text do
 
   # allocates a new glyph_id to a specific codepoint if it appears in the font.
   @spec to_glyph_id_alloc(TrueTypeFont.t(), String.t()) :: {String.t(), TrueType.glyph()}
-  defp to_glyph_id_alloc(%TrueTypeFont{} = font, this) when is_binary(this) do
+  defp to_glyph_id_alloc(%TrueTypeFont{font: %TrueType{} = tt} = font, this)
+       when is_binary(this) do
     case Map.get(font.font.cmap.to_glyph, this, 0) do
       0 ->
         # codepoint doesn't exist in font - return 0 as glyph id.
@@ -182,6 +183,8 @@ defmodule Typo.Utils.Text do
       n when is_integer(n) ->
         # codepoint exists - allocate a new glyph id.
         [{:next_glyph_id, gid}] = :ets.lookup(font.glyph_mapping, :next_glyph_id)
+        metrics = TrueType.Hmtx.get_metrics(tt, this)
+        true = :ets.insert(font.glyph_metrics, {gid, metrics})
         item = {this, gid}
         true = :ets.insert_new(font.glyph_mapping, item)
         true = :ets.insert(font.glyph_mapping, {:next_glyph_id, gid + 1})
