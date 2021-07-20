@@ -630,7 +630,7 @@ defmodule Typo.PDF.Server do
          gm = :ets.new(:glyph_mapping, [:ordered_set, :private]),
          gmet = :ets.new(:glyph_metrics, [:ordered_set, :private]),
          :ok <- register_font_map_128(font, gm, gmet) do
-      f = %TrueTypeFont{font: font, glyph_mapping: gm}
+      f = %TrueTypeFont{font: font, glyph_mapping: gm, glyph_metrics: gmet}
       ps_name = font.postscript_name
       new_fonts = Map.put(state.fonts, state.font_id, f)
       new_font_ids = Map.put(state.font_ids, ps_name, state.font_id)
