@@ -21,8 +21,9 @@ defmodule Typo.Font.TrueTypeFont do
 
   @type t :: %__MODULE__{
           font: nil | TrueType.t(),
-          glyph_usage: nil | :ets.tid()
+          glyph_mapping: nil | :ets.tid(),
+          glyph_metrics: nil | :ets.tid()
         }
 
-  defstruct font: nil, glyph_usage: nil
+  defstruct font: nil, glyph_mapping: nil, glyph_metrics: nil
 end

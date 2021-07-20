@@ -93,7 +93,7 @@ defmodule Typo.Utils.Text do
   # replaced with glyph 0.
   def encode(
         %TextState{
-          font: %TrueTypeFont{font: font, glyph_usage: gu},
+          font: %TrueTypeFont{font: %TrueType{} = tt} = font,
           character_space: cs,
           horizontal_scale: hs,
           size: sz,
@@ -111,31 +111,25 @@ defmodule Typo.Utils.Text do
       this
       |> encode_to_list(font)
       |> Enum.reduce({"", []}, fn {codepoint, glyph_id}, {prev, result} = _acc ->
-        {gid, width} = get_metrics(font, glyph_id)
-        gids = <<gid::16>>
+        metrics = TrueType.Hmtx.get_metrics(tt, codepoint)
+        gids = <<glyph_id::16>>
 
-        if width == 0 do
-          # missing metrics for given character (and for glyph 0) - skip...
-          {gid, result}
-        else
-          w = width * sc * hsc
-          _ = :ets.insert_new(gu, {:glyph_id, true})
+        w = metrics.advance * sc * hsc
 
-          case codepoint do
-            " " ->
-              sp = (cs + ws) * hsc
-              wx = w + sp
-              c = %{type: :space, glyph: gids, kern: 0, kern_sc: 0, space: sp, width: w, wx: wx}
-              {glyph_id, [c] ++ result}
+        case codepoint do
+          " " ->
+            sp = (cs + ws) * hsc
+            wx = w + sp
+            c = %{type: :space, glyph: gids, kern: 0, kern_sc: 0, space: sp, width: w, wx: wx}
+            {codepoint, [c] ++ result}
 
-            _ch ->
-              k = if kern?, do: get_kern(font, {prev, glyph_id}), else: 0
-              ksc = k * sc * hsc
-              sp = cs * hsc
-              wx = w + sp - ksc
-              c = %{type: :glyph, glyph: gids, kern: k, kern_sc: ksc, space: sp, width: w, wx: wx}
-              {glyph_id, [c] ++ result}
-          end
+          _ch ->
+            k = if kern?, do: TrueType.Kern.get_kern(tt, prev, codepoint), else: 0
+            ksc = k * sc * hsc
+            sp = cs * hsc
+            wx = w + sp - ksc
+            c = %{type: :glyph, glyph: gids, kern: k, kern_sc: ksc, space: sp, width: w, wx: wx}
+            {codepoint, [c] ++ result}
         end
       end)
 
@@ -143,37 +137,14 @@ defmodule Typo.Utils.Text do
   end
 
   # encodes unicode as list of glyph_ids.
-  @spec encode_to_list(String.t(), TrueType.t()) :: [{String.t(), TrueType.glyph()}]
-  defp encode_to_list(this, %TrueType{} = font) when is_binary(this) do
+  @spec encode_to_list(String.t(), TrueTypeFont.t()) :: [{String.t(), TrueType.glyph()}]
+  defp encode_to_list(this, %TrueTypeFont{} = font) when is_binary(this) do
     this
     |> String.normalize(:nfc)
     |> String.codepoints()
     |> Enum.map(fn item ->
       to_glyph_id(font, item)
     end)
-  end
-
-  # gets kerning value from font (if any).
-  @spec get_kern(TrueType.t(), {TrueType.glyph(), TrueType.glyph()}) :: number()
-  defp get_kern(%TrueType{kern: nil}, _glyphs), do: 0
-
-  defp get_kern(%TrueType{kern: k}, {_prev, _next} = glyphs) do
-    case Map.get(k.kern_pairs, glyphs, 0) do
-      n when is_number(n) -> n
-      _ -> 0
-    end
-  end
-
-  # gets metrics for given glyph id.
-  @spec get_metrics(TrueType.t(), TrueType.glyph()) :: {TrueType.glyph(), number()}
-  defp get_metrics(%TrueType{} = font, glyph_id) do
-    with info when is_map(info) <- Map.get(font.hmtx.metrics, glyph_id, nil) do
-      {glyph_id, info.advance}
-    else
-      _ ->
-        info = Map.get(font.hmtx.metrics, 0, %{advance: 0})
-        {glyph_id, info.advance}
-    end
   end
 
   @doc """
@@ -186,16 +157,35 @@ defmodule Typo.Utils.Text do
     end)
   end
 
-  # converts unicode codepoint to glyph id
-  @spec to_glyph_id(TrueType.t(), String.t()) :: {String.t(), TrueType.glyph()}
-  defp to_glyph_id(%TrueType{cmap: nil}, _this), do: :error
+  # converts unicode codepoint to glyph id.
+  # As we are going to subset the TrueType font, the glyph id almost certainly
+  # won't be the one the same as in the full font.
+  # We use the glyph_mapping ETS table to store the mapping of Unicode codepoints
+  # to subset glyph_ids - the the glyph has already been used, return that, if not
+  # may be allocate a new glyph id if the font supports the given codepoint.
+  @spec to_glyph_id(TrueTypeFont.t(), String.t()) :: {String.t(), TrueType.glyph()}
+  defp to_glyph_id(%TrueTypeFont{} = font, this) when is_binary(this) do
+    case :ets.lookup(font.glyph_mapping, this) do
+      [{_cp, _glyph} = r] -> r
+      [] -> to_glyph_id_alloc(font, this)
+    end
+  end
 
-  defp to_glyph_id(%TrueType{cmap: c} = _font, this) when is_binary(this) do
-    with glyph_id when is_integer(glyph_id) <- Map.get(c.to_glyph, this, :not_found) do
-      {this, glyph_id}
-    else
-      _ ->
+  # allocates a new glyph_id to a specific codepoint if it appears in the font.
+  @spec to_glyph_id_alloc(TrueTypeFont.t(), String.t()) :: {String.t(), TrueType.glyph()}
+  defp to_glyph_id_alloc(%TrueTypeFont{} = font, this) when is_binary(this) do
+    case Map.get(font.font.cmap.to_glyph, this, 0) do
+      0 ->
+        # codepoint doesn't exist in font - return 0 as glyph id.
         {this, 0}
+
+      n when is_integer(n) ->
+        # codepoint exists - allocate a new glyph id.
+        [{:next_glyph_id, gid}] = :ets.lookup(font.glyph_mapping, :next_glyph_id)
+        item = {this, gid}
+        true = :ets.insert_new(font.glyph_mapping, item)
+        true = :ets.insert(font.glyph_mapping, {:next_glyph_id, gid + 1})
+        item
     end
   end
 end

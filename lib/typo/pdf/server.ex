@@ -626,9 +626,11 @@ defmodule Typo.PDF.Server do
   # Postscript name (which is embedded in the font).
   @spec register_font(Server.t(), String.t()) :: {:ok, Server.t(), String.t()} | Typo.error()
   def register_font(%Server{} = state, filename) when is_binary(filename) do
-    with {:ok, %TrueType{} = font} <- TrueType.load(filename) do
-      gu = :ets.new(:glyph_usage, [:ordered_set, :private])
-      f = %TrueTypeFont{font: font, glyph_usage: gu}
+    with {:ok, %TrueType{} = font} <- TrueType.load(filename),
+         gm = :ets.new(:glyph_mapping, [:ordered_set, :private]),
+         gmet = :ets.new(:glyph_metrics, [:ordered_set, :private]),
+         :ok <- register_font_map_128(font, gm, gmet) do
+      f = %TrueTypeFont{font: font, glyph_mapping: gm}
       ps_name = font.postscript_name
       new_fonts = Map.put(state.fonts, state.font_id, f)
       new_font_ids = Map.put(state.font_ids, ps_name, state.font_id)
@@ -644,6 +646,22 @@ defmodule Typo.PDF.Server do
 
       {:ok, new_state, ps_name}
     end
+  end
+
+  # maps the first 128 unicodes so that PDF output is readable fairly easily...
+  @spec register_font_map_128(TrueType.t(), :ets.tid(), :ets.tid()) :: :ok
+  defp register_font_map_128(%TrueType{} = font, gm_ets, met_ets) do
+    true = :ets.insert(gm_ets, {:next_glyph_id, 0})
+
+    Enum.each(0..127, fn cp ->
+      ch = <<cp::utf8>>
+      true = :ets.insert_new(gm_ets, {ch, cp})
+      metrics = TrueType.Hmtx.get_metrics(font, ch)
+      true = :ets.insert(met_ets, {cp, metrics})
+    end)
+
+    true = :ets.insert(gm_ets, {:next_glyph_id, 128})
+    :ok
   end
 
   # loads and registers an image.
