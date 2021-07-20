@@ -22,9 +22,7 @@ defmodule Typo.Font.TrueTypeFont do
   @type t :: %__MODULE__{
           font: nil | TrueType.t(),
           # maps codepoints => subset glyph_ids
-          glyph_mapping: nil | :ets.tid(),
-          # maps subset glyph_ids => horizontal metrics
-          glyph_metrics: nil | :ets.tid()
+          glyph_mapping: nil | :ets.tid()
         }
 
   defstruct font: nil, glyph_mapping: nil, glyph_metrics: nil
