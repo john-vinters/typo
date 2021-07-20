@@ -758,14 +758,21 @@ defmodule Typo.PDF.Server do
          new_state <- move_text(state, {x, ts.y}) do
       newline? = Keyword.get(options, :newline, false)
 
+      # first, coalesce runs of characters with 0 kerning adjustment...
       txt =
         Enum.reduce(encoded, [], fn item, acc ->
           case Map.get(item, :kern, 0) do
-            0 -> [n2s([{:str, item.glyph}])] ++ acc
-            k when is_number(k) -> [n2s([k, {:str, item.glyph}])] ++ acc
+            0 -> write_text_append(acc, item.glyph)
+            k when is_number(k) -> [item.glyph, k] ++ acc
           end
         end)
-        |> Enum.reverse()
+        # then format for output...
+        |> Enum.reduce([], fn item, acc ->
+          case item do
+            k when is_number(k) -> [n2s(k)] ++ acc
+            str when is_binary(str) -> [{:str, str}] ++ acc
+          end
+        end)
 
       new_text_state =
         case newline? do
@@ -782,4 +789,15 @@ defmodule Typo.PDF.Server do
   defp write_text_align(width, x, :centre), do: {:ok, x - width / 2}
   defp write_text_align(_width, x, :left), do: {:ok, x}
   defp write_text_align(width, x, :right), do: {:ok, x - width}
+
+  # appends binary onto end of list's first item if it is a binary, otherwise
+  # inserts a new item into the head of the list.
+  defp write_text_append([], str) when is_binary(str), do: [str]
+
+  defp write_text_append([h | t], str) when is_binary(str) do
+    case h do
+      b when is_binary(b) -> [b <> str] ++ t
+      k when is_number(k) -> [str, k] ++ t
+    end
+  end
 end
