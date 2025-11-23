@@ -32,7 +32,11 @@ defmodule Typo.PDF do
         }
 
   defstruct assigns: %{},
-            defaults: %{:page_size => {595, 842}, :page_rotation => 0},
+            defaults: %{
+              :page_size => {595, 842},
+              :page_orientation => :portrait,
+              :page_rotation => 0
+            },
             max_page: 0,
             metadata: %{},
             pages: %{}

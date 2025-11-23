@@ -35,6 +35,10 @@ defmodule Typo.Utils.Guards do
 
   defguard is_page_rotation(r) when r in [0, 90, 180, 270]
 
+  defguard is_page_size(s)
+           when is_tuple(s) and tuple_size(s) == 2 and is_number(elem(s, 0)) and
+                  is_number(elem(s, 1))
+
   defguard is_transform_matrix(m)
            when is_number(elem(m, 0)) and is_number(elem(m, 1)) and
                   is_number(elem(m, 2)) and is_number(elem(m, 3)) and is_number(elem(m, 4)) and
