@@ -41,4 +41,10 @@ defmodule Typo do
   @type transform_matrix :: {number(), number(), number(), number(), number(), number()}
   @type winding_rule :: :even_odd | :nonzero
   @type xy :: {number(), number()}
+
+  @doc """
+  Returns the library version string.
+  """
+  @spec version :: String.t()
+  def version, do: to_string(Application.spec(:typo, :vsn))
 end
