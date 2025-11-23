@@ -21,14 +21,14 @@ defmodule Typo.Image.JPEG do
 
   alias Typo.Image.JPEG
 
-  @type t :: %__MODULE__{
-          width: non_neg_integer(),
-          height: non_neg_integer(),
-          bits_per_component: non_neg_integer(),
-          components: non_neg_integer(),
-          colour_space: :DeviceCMYK | :DeviceGray | :DeviceRGB,
-          data: binary()
-        }
+  @opaque t :: %__MODULE__{
+            width: non_neg_integer(),
+            height: non_neg_integer(),
+            bits_per_component: non_neg_integer(),
+            components: non_neg_integer(),
+            colour_space: :DeviceCMYK | :DeviceGray | :DeviceRGB,
+            data: binary()
+          }
 
   defstruct width: 0,
             height: 0,
@@ -88,4 +88,18 @@ defmodule Typo.Image.JPEG do
 
   defp to_colour_space(s),
     do: raise(Typo.ImageError, "unsupported JPEG colour space: #{inspect(s)}")
+
+  defimpl Typo.Protocol.Image, for: Typo.Image.JPEG do
+    @spec has_alpha?(JPEG.t()) :: false
+    def has_alpha?(_this), do: false
+
+    @spec height(JPEG.t()) :: non_neg_integer()
+    def height(%JPEG{height: h}), do: h
+
+    @spec size(JPEG.t()) :: {non_neg_integer(), non_neg_integer()}
+    def size(%JPEG{height: h, width: w}), do: {w, h}
+
+    @spec width(JPEG.t()) :: non_neg_integer()
+    def width(%JPEG{width: w}), do: w
+  end
 end
