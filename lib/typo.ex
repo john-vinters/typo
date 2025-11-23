@@ -42,6 +42,10 @@ defmodule Typo do
   @type winding_rule :: :even_odd | :nonzero
   @type xy :: {number(), number()}
 
+  defmodule ImageError do
+    defexception [:message]
+  end
+
   @doc """
   Returns the library version string.
   """
