@@ -15,6 +15,12 @@
 #
 
 defmodule Typo do
+  @type colour :: colour_greyscale() | colour_rgb() | colour_cmyk()
+  @type colour_greyscale :: number()
+  @type colour_cmyk :: {number(), number(), number(), number()}
+  @type colour_rgb :: {number(), number(), number()}
+  @type line_cap :: :butt | :round | :square
+  @type line_join :: :bevel | :miter | :mitre | :round
   @type metadata_field ::
           :author
           | :creator
@@ -29,4 +35,5 @@ defmodule Typo do
   @type page_orientation :: :landscape | :portrait
   @type page_rotation :: 0 | 90 | 180 | 270
   @type page_size :: {number(), number()}
+  @type transform_matrix :: {number(), number(), number(), number(), number(), number()}
 end

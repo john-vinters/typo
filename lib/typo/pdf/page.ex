@@ -28,7 +28,7 @@ defmodule Typo.PDF.Page do
           page: Typo.page_number(),
           rotation: nil | Typo.page_rotation(),
           size: nil | Typo.page_size(),
-          stream: iodata()
+          stream: term()
         }
 
   @enforce_keys [:pdf, :page]
