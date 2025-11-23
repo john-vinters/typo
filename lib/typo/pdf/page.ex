@@ -14,19 +14,21 @@
 # limitations under the License.
 #
 
-defmodule Typo do
-  @type metadata_field ::
-          :author
-          | :creator
-          | :creation_date
-          | :keywords
-          | :mod_date
-          | :producer
-          | :subject
-          | :title
-  @type oid :: {:oid, integer(), integer()}
-  @type page_number :: integer()
-  @type page_orientation :: :landscape | :portrait
-  @type page_rotation :: 0 | 90 | 180 | 270
-  @type page_size :: {number(), number()}
+defmodule Typo.PDF.Page do
+  @moduledoc """
+  Page handling.
+  """
+
+  alias Typo.PDF
+
+  @type t :: %__MODULE__{
+          pdf: PDF.t(),
+          page: Typo.page_number(),
+          rotation: nil | Typo.page_rotation(),
+          size: nil | Typo.page_size(),
+          stream: iodata()
+        }
+
+  @enforce_keys [:pdf, :page]
+  defstruct pdf: nil, page: nil, rotation: nil, size: nil, stream: []
 end
