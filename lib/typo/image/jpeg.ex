@@ -79,7 +79,7 @@ defmodule Typo.Image.JPEG do
   defp process_sof(_, _), do: raise(Typo.ImageError, "JPEG appears to be corrupt")
 
   @spec skip_segment(binary()) :: binary()
-  defp skip_segment(<<length::16, _skip::binary-size(length), rest::binary>>), do: rest
+  defp skip_segment(<<length::16, _skip::binary-size(length - 2), rest::binary>>), do: rest
   defp skip_segment(_), do: <<>>
 
   @spec to_colour_space(byte()) :: :DeviceCMYK | :DeviceGray | :DeviceRGB
