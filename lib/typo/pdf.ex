@@ -20,10 +20,12 @@ defmodule Typo.PDF do
   """
 
   alias Typo.PDF.Page
+  alias Typo.Utils.IdMap
 
   @type t :: %__MODULE__{
           assigns: %{optional(atom()) => term()},
           defaults: %{optional(atom()) => term()},
+          images: IdMap.t(),
           max_page: Typo.page_number(),
           metadata: %{
             optional(Typo.metadata_field()) => {:utf16be, String.t()} | {:literal, DateTime.t()}
@@ -37,6 +39,7 @@ defmodule Typo.PDF do
               :page_orientation => :portrait,
               :page_rotation => 0
             },
+            images: IdMap.new(),
             max_page: 0,
             metadata: %{},
             pages: %{}
