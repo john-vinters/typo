@@ -38,6 +38,7 @@ defmodule Typo do
   @type path_paint_options :: [
           {:close | :fill | :stroke, boolean()} | {:winding, winding_rule()}
         ]
+  @type tag :: Map.key()
   @type transform_matrix :: {number(), number(), number(), number(), number(), number()}
   @type winding_rule :: :even_odd | :nonzero
   @type xy :: {number(), number()}
