@@ -41,7 +41,7 @@ defmodule Typo.PDF.Document do
   """
 
   alias Typo.PDF
-  alias Typo.Image.JPEG
+  alias Typo.Image.{JPEG, PNG}
   alias Typo.Utils.IdMap
 
   @_metadata_fields %{
@@ -102,6 +102,7 @@ defmodule Typo.PDF.Document do
     image =
       cond do
         JPEG.jpeg?(data) -> JPEG.process!(data)
+        PNG.png?(data) -> PNG.process!(data)
         true -> raise Typo.ImageError, "unsupported image type: #{filename}"
       end
 
