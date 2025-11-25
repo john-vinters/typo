@@ -15,6 +15,8 @@
 #
 
 defmodule Typo do
+  @moduledoc false
+
   @type colour :: colour_greyscale() | colour_rgb() | colour_cmyk()
   @type colour_greyscale :: number()
   @type colour_cmyk :: {number(), number(), number(), number()}
