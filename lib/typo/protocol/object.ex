@@ -64,8 +64,9 @@ end
 
 defimpl Typo.Protocol.Object, for: Tuple do
   alias Typo.Protocol.Object
+  alias Typo.Utils.Format
 
-  # def to_iodata({:literal, %DateTime{} = dt}, _options), do: XXXX FIXME XXXX
+  def to_iodata({:literal, %DateTime{} = dt}, _options), do: Format.literal_date_time(dt)
   def to_iodata({:raw, this}, _options), do: this
   def to_iodata({:oid, oid, gen}, _options), do: "#{oid} #{gen} R"
 
