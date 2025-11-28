@@ -227,4 +227,97 @@ defmodule Typo.Image.PNG do
     @spec width(PNG.t()) :: non_neg_integer()
     def width(%PNG{width: w}), do: w
   end
+
+  defimpl Typo.Protocol.Object, for: Typo.Image.PNG do
+    alias Typo.Protocol.Object
+
+    @spec alpha_iodata(PNG.t()) :: iodata()
+    defp alpha_iodata(this) do
+      data = Zlib.compress(this.alpha_data, 6)
+
+      dict = %{
+        :Type => :XObject,
+        :Subtype => :Image,
+        :Height => this.height,
+        :Width => this.width,
+        :Filter => :FlateDecode,
+        :ColorSpace => :DeviceGray,
+        :BitsPerComponent => this.bit_depth,
+        :Length => IO.iodata_length(data),
+        :DecodeParms => %{
+          :Predictor => 15,
+          :Colors => 1,
+          :Columns => this.width
+        }
+      }
+
+      [Object.to_iodata(dict), "\nstream\n", data, "\nendstream"]
+    end
+
+    @spec pixel_transparency(PNG.t()) :: map()
+    defp pixel_transparency(%PNG{has_transparency: true, transparency_data: g})
+         when is_integer(g),
+         do: %{:Mask => [g, g]}
+
+    defp pixel_transparency(%PNG{has_transparency: true, transparency_data: {r, g, b}})
+         when is_integer(r) and is_integer(g) and is_integer(b),
+         do: %{:Mask => {r, r, g, g, b, b}}
+
+    defp pixel_transparency(%PNG{has_transparency: true, transparency_data: t})
+         when is_binary(t) do
+      mask =
+        :erlang.binary_to_list(t)
+        |> Enum.map(fn v -> [v, v] end)
+        |> List.flatten()
+
+      %{:Mask => mask}
+    end
+
+    defp pixel_transparency(%PNG{has_transparency: false}), do: %{}
+
+    @spec pixel_iodata(PNG.t(), boolean()) :: iodata()
+    def pixel_iodata(this, smask) do
+      data = Zlib.compress(this.image_data, 6)
+      s_map = if smask, do: %{:SMask => smask}, else: %{}
+
+      cs_pal =
+        if this.colour_type == 3 do
+          palette_size = round(byte_size(this.palette_data) / 3 - 1)
+          [:Indexed, :DeviceRGB, palette_size, {:raw, "<#{Base.encode16(this.palette_data)}>"}]
+        else
+          this.colour_space
+        end
+
+      dict =
+        %{
+          :Type => :XObject,
+          :Subtype => :Image,
+          :Height => this.height,
+          :Width => this.width,
+          :Filter => :FlateDecode,
+          :ColorSpace => cs_pal,
+          :BitsPerComponent => this.bit_depth,
+          :Interpolate => true,
+          :Length => IO.iodata_length(data),
+          :DecodeParms => %{
+            :Predictor => 15,
+            :BitsPerComponent => this.bit_depth,
+            :Colors => this.channels,
+            :Columns => this.width
+          }
+        }
+        |> Map.merge(s_map)
+        |> Map.merge(pixel_transparency(this))
+
+      [Object.to_iodata(dict), "\nstream\n", data, "\nendstream"]
+    end
+
+    @spec to_iodata(PNG.t(), Keyword.t()) :: iodata()
+    def to_iodata(this, options) do
+      case Keyword.get(options, :type, :pixel) do
+        :pixel -> pixel_iodata(this, Keyword.get(options, :smask))
+        :alpha -> alpha_iodata(this)
+      end
+    end
+  end
 end
