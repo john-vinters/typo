@@ -102,4 +102,24 @@ defmodule Typo.Image.JPEG do
     @spec width(JPEG.t()) :: non_neg_integer()
     def width(%JPEG{width: w}), do: w
   end
+
+  defimpl Typo.Protocol.Object, for: Typo.Image.JPEG do
+    @spec to_iodata(JPEG.t(), Keyword.t()) :: iodata()
+    def to_iodata(this, _options) do
+      alias Typo.Protocol.Object
+
+      dict = %{
+        :Type => :XObject,
+        :Subtype => :Image,
+        :Height => this.height,
+        :Width => this.width,
+        :Filter => :DCTDecode,
+        :ColorSpace => this.colour_space,
+        :BitsPerComponent => this.bits_per_component,
+        :Length => byte_size(this.data)
+      }
+
+      [Object.to_iodata(dict), "\nstream\n", this.data, "\nendstream"]
+    end
+  end
 end
