@@ -17,9 +17,9 @@
 defmodule Typo.Encoding.ZapfDingbats do
   @moduledoc false
 
-  @opaque unicode_to_zd :: %{optional(binary()) => binary()}
+  @opaque codepoint_to_zd :: %{optional(String.codepoint()) => binary()}
 
-  @u_to_zd_map %{
+  @c_to_zd_map %{
     "\u0020" => <<0x20::8>>,
     "\u2701" => <<0x21::8>>,
     "\u2702" => <<0x22::8>>,
@@ -224,14 +224,14 @@ defmodule Typo.Encoding.ZapfDingbats do
     "\u27BE" => <<0xFE::8>>
   }
 
-  @spec unicode_to_zd_map :: unicode_to_zd()
-  def unicode_to_zd_map, do: @u_to_zd_map
+  @spec codepoint_to_zd_map :: codepoint_to_zd()
+  def codepoint_to_zd_map, do: @c_to_zd_map
 
   @doc """
-  Given the Unicode grapheme, returns the ZapfDingbats encoding or `nil`
+  Given the Unicode `codepoint`, returns the ZapfDingbats encoding or `nil`
   if there is no mapping.
   """
-  @spec unicode_to_zd(String.grapheme()) :: Typo.glyph() | nil
-  def unicode_to_zd(grapheme) when is_binary(grapheme),
-    do: Map.get(unicode_to_zd_map(), grapheme)
+  @spec codepoint_to_zd(String.codepoint()) :: Typo.glyph() | nil
+  def codepoint_to_zd(codepoint) when is_binary(codepoint),
+    do: Map.get(codepoint_to_zd_map(), codepoint)
 end
