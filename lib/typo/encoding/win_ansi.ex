@@ -17,14 +17,14 @@
 defmodule Typo.Encoding.WinAnsi do
   @moduledoc false
 
-  @opaque unicode_to_winansi :: %{optional(binary()) => binary()}
+  @opaque codepoint_to_winansi :: %{optional(String.codepoint()) => binary()}
   @opaque name_to_winansi :: %{optional(binary()) => binary()}
 
-  {:ok, {utw, ntw}} =
+  {:ok, {ctw, ntw}} =
     File.open("assets/unicode/cp1252.txt", [:read], fn file ->
       file
       |> IO.stream(:line)
-      |> Enum.reduce({%{}, %{}}, fn line, {utw, ntw} = acc ->
+      |> Enum.reduce({%{}, %{}}, fn line, {ctw, ntw} = acc ->
         tl = String.trim(line)
 
         case tl do
@@ -37,9 +37,9 @@ defmodule Typo.Encoding.WinAnsi do
               {codepoint, ""} = Integer.parse(cp, 16)
               {encoding, ""} = Integer.parse(enc, 16)
               enc = <<encoding::8>>
-              utw = Map.put(utw, <<codepoint::utf8>>, enc)
+              ctw = Map.put(ctw, <<codepoint::utf8>>, enc)
               ntw = Map.put(ntw, String.upcase(name), enc)
-              {utw, ntw}
+              {ctw, ntw}
             else
               acc
             end
@@ -50,14 +50,22 @@ defmodule Typo.Encoding.WinAnsi do
       end)
     end)
 
-  @_utw utw
+  @_ctw ctw
   @_ntw ntw
 
-  @spec u_to_winansi_map :: unicode_to_winansi()
-  defp u_to_winansi_map, do: @_utw
+  @spec c_to_winansi_map :: codepoint_to_winansi()
+  defp c_to_winansi_map, do: @_ctw
 
   @spec name_to_winansi_map :: name_to_winansi()
   defp name_to_winansi_map, do: @_ntw
+
+  @doc """
+  Given the Unicode `codepoint`, returns the WinAnsi encoding or `nil`
+  if there is no mapping.
+  """
+  @spec codepoint_to_winansi(String.codepoint()) :: Typo.glyph() | nil
+  def codepoint_to_winansi(codepoint) when is_binary(codepoint),
+    do: Map.get(c_to_winansi_map(), codepoint)
 
   @doc """
   Given the unicode character name, returns the WinAnsi encoding or `nil`
@@ -66,12 +74,4 @@ defmodule Typo.Encoding.WinAnsi do
   @spec name_to_winansi(String.t()) :: Typo.glyph() | nil
   def name_to_winansi(name) when is_binary(name),
     do: Map.get(name_to_winansi_map(), String.upcase(name))
-
-  @doc """
-  Given the Unicode codepoint, returns the WinAnsi encoding or `nil`
-  if there is no mapping.
-  """
-  @spec unicode_to_winansi(String.codepoint()) :: Typo.glyph() | nil
-  def unicode_to_winansi(codepoint) when is_binary(codepoint),
-    do: Map.get(u_to_winansi_map(), codepoint)
 end
