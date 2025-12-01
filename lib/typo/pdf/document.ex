@@ -42,6 +42,7 @@ defmodule Typo.PDF.Document do
 
   alias Typo.PDF
   alias Typo.Image.{JPEG, PNG}
+  alias Typo.Render.Core
   alias Typo.Utils.IdMap
 
   @_metadata_fields %{
@@ -141,4 +142,20 @@ defmodule Typo.PDF.Document do
   def set_metadata(%PDF{} = pdf, field, %DateTime{} = value)
       when field in [:creation_date, :mod_date],
       do: put_in(pdf.metadata[Map.fetch!(metadata_fields(), field)], {:literal, value})
+
+  @doc """
+  Renders `pdf` as iodata.
+  """
+  @spec to_iodata(PDF.t()) :: iodata()
+  def to_iodata(%PDF{} = pdf), do: Core.render(pdf)
+
+  @doc """
+  Renders `pdf` as iodata, then writes it to `filename`.
+  """
+  @spec write!(PDF.t(), String.t(), [File.mode()]) :: PDF.t()
+  def write!(%PDF{} = pdf, filename, options \\ [:raw])
+      when is_binary(filename) and is_list(options) do
+    File.write!(filename, to_iodata(pdf), options)
+    pdf
+  end
 end
