@@ -17,8 +17,8 @@
 defmodule Typo.Encoding.WinAnsi do
   @moduledoc false
 
-  @opaque codepoint_to_winansi :: %{optional(String.codepoint()) => binary()}
-  @opaque name_to_winansi :: %{optional(binary()) => binary()}
+  @opaque codepoint_to_winansi :: %{optional(String.codepoint()) => Typo.glyph()}
+  @opaque name_to_winansi :: %{optional(String.t()) => Typo.glyph()}
 
   {:ok, {ctw, ntw}} =
     File.open("assets/unicode/cp1252.txt", [:read], fn file ->
