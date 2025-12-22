@@ -28,7 +28,7 @@ defmodule Typo.Font.StandardFont do
           full_name: String.t(),
           flags: non_neg_integer(),
           font_name: String.t(),
-          hash: binary(),
+          hash: Typo.font_hash(),
           is_fixed_pitch: boolean(),
           is_italic: boolean(),
           italic_angle: number(),

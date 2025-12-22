@@ -49,6 +49,26 @@ defmodule Typo do
   @type winding_rule :: :even_odd | :nonzero
   @type xy :: {number(), number()}
 
+  # Font and Text related types.
+  @type font_attrs :: [
+          {:family, String.t()}
+          | {:full_name, String.t()}
+          | {:hash, font_hash()}
+          | {:postscript_name, String.t()}
+          | {:slant, font_slant()}
+          | {:spacing, font_spacing()}
+          | {:type, font_type()}
+          | {:weight, font_weight()}
+          | {:width, font_width}
+        ]
+  @type font_face :: {font_attrs(), pos_integer()}
+  @type font_hash :: binary()
+  @type font_slant :: number()
+  @type font_spacing :: :fixed | :variable
+  @type font_type :: :otf | :standard
+  @type font_weight :: 0..1000
+  @type font_width :: 0..200
+
   defmodule FontError do
     defexception [:message]
   end
