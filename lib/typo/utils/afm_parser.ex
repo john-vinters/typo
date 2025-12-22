@@ -39,6 +39,8 @@ defmodule Typo.Utils.AFMParser do
       end
 
     File.open!(filename, [:read], fn file ->
+      stat = File.stat!(filename)
+
       file
       |> IO.stream(:line)
       |> Enum.reduce(%StandardFont{}, fn line, font ->
@@ -47,6 +49,7 @@ defmodule Typo.Utils.AFMParser do
       end)
       |> update_attributes()
       |> update_cmap(enc)
+      |> update_hash(filename, stat)
     end)
   end
 
@@ -207,4 +210,11 @@ defmodule Typo.Utils.AFMParser do
   @spec update_cmap(StandardFont.t(), :symbol | :winansi | :zapf_dingbats) :: StandardFont.t()
   defp update_cmap(font, :zapf_dingbats), do: %{font | cmap: ZapfDingbats.codepoint_to_zd_map()}
   defp update_cmap(font, _), do: font
+
+  @spec update_hash(StandardFont.t(), String.t(), File.Stat.t()) :: StandardFont.t()
+  defp update_hash(font, filename, stat) when is_binary(filename) do
+    full = Path.expand(filename)
+    str = "#{full}_#{stat.size}_#{font.full_name}_#{map_size(font.cmap)}_#{map_size(font.kern)}"
+    %{font | hash: Base.encode16(:crypto.hash(:sha512, str))}
+  end
 end
