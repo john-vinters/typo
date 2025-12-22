@@ -49,6 +49,10 @@ defmodule Typo do
   @type winding_rule :: :even_odd | :nonzero
   @type xy :: {number(), number()}
 
+  defmodule FontError do
+    defexception [:message]
+  end
+
   defmodule ImageError do
     defexception [:message]
   end
