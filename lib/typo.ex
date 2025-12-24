@@ -66,7 +66,7 @@ defmodule Typo do
   @type font_index :: pos_integer()
   @type font_slant :: number()
   @type font_spacing :: :fixed | :variable
-  @type font_type :: :otf | :standard
+  @type font_type :: :opentype | :standard
   @type font_weight :: 0..1000
   @type font_width :: 0..200
 
