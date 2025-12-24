@@ -40,6 +40,7 @@ defmodule Typo.PDF.Document do
   containing the Typo version when a document is created.
   """
 
+  alias Typo.Font.FontStore
   alias Typo.PDF
   alias Typo.Image.{JPEG, PNG}
   alias Typo.Render.Core
@@ -112,9 +113,17 @@ defmodule Typo.PDF.Document do
 
   @doc """
   Creates a new empty PDF document.
+
+  Options:
+    * `:load_standard_fonts` if `true`, then the core 14 standard PDF fonts are
+      loaded.  This defaults to `false`.  The first time the fonts are loaded in
+      a running VM will take longer while the AFM files are parsed and then fonts
+      registered as persistent terms.
   """
   @spec new(Keyword.t()) :: PDF.t()
   def new(options \\ []) when is_list(options) do
+    if Keyword.get(options, :load_standard_fonts, false), do: FontStore.register_core_fonts!()
+
     %PDF{}
     |> set_metadata(:creation_date, DateTime.utc_now())
     |> set_metadata(:producer, "Typo PDF Library v#{Typo.version()}")

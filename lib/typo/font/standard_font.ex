@@ -33,7 +33,7 @@ defmodule Typo.Font.StandardFont do
           is_italic: boolean(),
           italic_angle: number(),
           kern: %{optional({Typo.glyph(), Typo.glyph()}) => number()},
-          otf_weight: non_neg_integer(),
+          otf_weight: Typo.font_weight(),
           stem_h: number(),
           stem_v: number(),
           underline_position: number(),
@@ -66,4 +66,18 @@ defmodule Typo.Font.StandardFont do
             x_height: 0,
             weight: "MEDIUM",
             width: %{}
+
+  defimpl Typo.Protocol.Font, for: Typo.Font.StandardFont do
+    alias Typo.Font.StandardFont
+
+    def get_family(%StandardFont{family_name: family}), do: family
+
+    def get_full_name(%StandardFont{full_name: full_name}), do: full_name
+
+    def get_hash(%StandardFont{hash: hash}), do: hash
+
+    def get_postscript_name(%StandardFont{font_name: name}), do: name
+
+    def get_type(%StandardFont{}), do: :standard
+  end
 end
