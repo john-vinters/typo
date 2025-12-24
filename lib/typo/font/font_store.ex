@@ -77,6 +77,29 @@ defmodule Typo.Font.FontStore do
     :persistent_term.get({__MODULE__, :v1, :font, id})
   end
 
+  @doc """
+  Returns the unsorted list of fonts in a given `family`, or all fonts if no
+  family provided.
+  """
+  @spec get_fonts :: [{Typo.font_type(), String.t()}]
+  def get_fonts do
+    get_store().fonts
+    |> Enum.reduce([], fn {{type, n_type, name}, _v}, acc ->
+      if n_type == :full, do: [{type, name}] ++ acc, else: acc
+    end)
+  end
+
+  @spec get_fonts(String.t()) :: [{Typo.font_type(), String.t()}]
+  def get_fonts(family) do
+    store = get_store()
+    fids = Map.get(store.family, String.downcase(family), [])
+
+    get_store().fonts
+    |> Enum.reduce([], fn {{type, n_type, name}, v}, acc ->
+      if n_type == :full && v in fids, do: [{type, name}] ++ acc, else: acc
+    end)
+  end
+
   # returns the font store struct.
   @spec get_store :: FontStore.t()
   defp get_store, do: :persistent_term.get({__MODULE__, :v1}, %FontStore{})
