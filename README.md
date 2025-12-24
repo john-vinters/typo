@@ -1,16 +1,17 @@
 # Typo
 
-Typo is a pure Elixir library for generating PDF documents programatically.  
+Typo is a pure Elixir library for generating PDF documents programatically.
 
-It offers an easy to use interface which attempts to design-out as many potential
-pitfalls as possible whilst remaining easy to understand.
+It offers an easy to use interface which attempts to design-out as many
+potential pitfalls as possible whilst remaining easy to understand.
 
-Typo is generally used as an in-process library.  This enables the user to optionally
-move the PDF generation code into its own Task or GenServer if required (if you
-don't know what this means, you probably don't need to worry about it yet).
+Typo is generally used as an in-process library.  This enables the user to
+optionally move the PDF generation code into its own Task or GenServer if
+required (if you don't know what this means, you probably don't need to worry
+about it yet).
 
-Manipulating existing PDF documents is an explicit non-goal for Typo - it is purely
-designed to creating new PDF documents.
+Manipulating existing PDF documents is an explicit non-goal for Typo - it is
+purely designed to create new PDF documents.
 
 ## Installation
 
