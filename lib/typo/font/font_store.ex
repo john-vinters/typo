@@ -47,9 +47,6 @@ defmodule Typo.Font.FontStore do
             hash_to_id: %{},
             seq: 0
 
-  defp font_sorter({l_type, l_name}, {r_type, r_name}),
-    do: l_name <= r_name and l_type <= r_type
-
   # returns the list of font families.
   @spec get_families :: [String.t()]
   def get_families do
@@ -90,7 +87,7 @@ defmodule Typo.Font.FontStore do
     |> Enum.reduce([], fn {{type, n_type, name}, _v}, acc ->
       if n_type == :full, do: [{type, name}] ++ acc, else: acc
     end)
-    |> Enum.sort(&font_sorter/2)
+    |> Enum.sort_by(&{elem(&1, 1), elem(&1, 0)})
   end
 
   @spec get_fonts(String.t()) :: [{Typo.font_type(), String.t()}]
@@ -102,7 +99,7 @@ defmodule Typo.Font.FontStore do
     |> Enum.reduce([], fn {{type, n_type, name}, v}, acc ->
       if n_type == :full && v in fids, do: [{type, name}] ++ acc, else: acc
     end)
-    |> Enum.sort(&font_sorter/2)
+    |> Enum.sort_by(&{elem(&1, 1), elem(&1, 0)})
   end
 
   # returns the font store struct.
