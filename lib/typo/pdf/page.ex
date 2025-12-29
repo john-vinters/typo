@@ -21,18 +21,19 @@ defmodule Typo.PDF.Page do
 
   import Typo.Utils.Guards
   alias Typo.PDF
-  alias Typo.PDF.Page
+  alias Typo.PDF.{GState, Page}
 
   @type t :: %__MODULE__{
           pdf: PDF.t(),
           page: Typo.page_number(),
           rotation: nil | Typo.page_rotation(),
           size: nil | Typo.page_size(),
-          stream: term()
+          stream: term(),
+          text_state: GState.t()
         }
 
   @enforce_keys [:pdf, :page]
-  defstruct pdf: nil, page: nil, rotation: nil, size: nil, stream: []
+  defstruct pdf: nil, page: nil, rotation: nil, size: nil, stream: [], text_state: %GState{}
 
   # applies page orientation by swapping width and height values if required.
   @spec apply_orientation(Typo.page_size(), Typo.page_orientation()) :: Typo.page_size()
