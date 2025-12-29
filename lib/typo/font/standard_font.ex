@@ -74,6 +74,12 @@ defmodule Typo.Font.StandardFont do
 
     def get_full_name(%StandardFont{full_name: full_name}), do: full_name
 
+    def get_glyph(%StandardFont{cmap: cmap}, codepoint), do: Map.get(cmap, codepoint)
+
+    def get_glyph_kern(%StandardFont{kern: k}, left, right), do: Map.get(k, {left, right}, 0)
+
+    def get_glyph_width(%StandardFont{width: w}, glyph), do: Map.get(w, glyph, 0)
+
     def get_hash(%StandardFont{hash: hash}), do: hash
 
     def get_postscript_name(%StandardFont{font_name: name}), do: name

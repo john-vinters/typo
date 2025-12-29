@@ -21,6 +21,15 @@ defprotocol Typo.Protocol.Font do
   @spec get_full_name(any()) :: String.t()
   def get_full_name(this)
 
+  @spec get_glyph(any(), String.t()) :: Typo.glyph() | nil
+  def get_glyph(this, codepoint)
+
+  @spec get_glyph_kern(any(), Typo.glyph(), Typo.glyph()) :: number()
+  def get_glyph_kern(this, left, right)
+
+  @spec get_glyph_width(any(), Typo.glyph()) :: number()
+  def get_glyph_width(this, glyph)
+
   @spec get_hash(any()) :: Typo.font_hash()
   def get_hash(this)
 
