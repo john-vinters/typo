@@ -29,11 +29,18 @@ defmodule Typo.PDF.Page do
           rotation: nil | Typo.page_rotation(),
           size: nil | Typo.page_size(),
           stream: term(),
-          text_state: GState.t()
+          text_state: GState.t(),
+          text_state_stack: [GState.t()]
         }
 
   @enforce_keys [:pdf, :page]
-  defstruct pdf: nil, page: nil, rotation: nil, size: nil, stream: [], text_state: %GState{}
+  defstruct pdf: nil,
+            page: nil,
+            rotation: nil,
+            size: nil,
+            stream: [],
+            text_state: %GState{},
+            text_state_stack: []
 
   # applies page orientation by swapping width and height values if required.
   @spec apply_orientation(Typo.page_size(), Typo.page_orientation()) :: Typo.page_size()

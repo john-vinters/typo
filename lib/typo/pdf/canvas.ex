@@ -251,9 +251,16 @@ defmodule Typo.PDF.Canvas do
   """
   @spec with_state(Page.t(), (Page.t() -> Page.t())) :: Page.t()
   def with_state(%Page{} = page, fun) when is_function(fun, 1) do
+    page = %{page | text_state_stack: [page.text_state] ++ page.text_state_stack}
+
     case fun.(append_data(page, "q")) do
-      %Page{} = page -> append_data(page, "Q")
-      other -> raise ArgumentError, "expected a Page struct, got: #{inspect(other)}"
+      %Page{} = page ->
+        [head | rest] = page.text_state_stack
+        page = %{page | text_state: head, text_state_stack: rest}
+        append_data(page, "Q")
+
+      other ->
+        raise ArgumentError, "expected a Page struct, got: #{inspect(other)}"
     end
   end
 end
