@@ -34,7 +34,7 @@ defmodule Typo.PDF.Text do
   """
   @spec move_to(Page.t(), Typo.xy()) :: Page.t()
   def move_to(%Page{in_text: false}, _p),
-    do: raise(ArgumentError, "this function must only be called from a with_text/2 function.")
+    do: raise(Typo.TextError, "this function must only be called from a with_text/2 function.")
 
   def move_to(%Page{in_text: true} = page, {x, y} = p) when is_xy(p) do
     matrix = Transform.translate(x, y)
@@ -106,7 +106,7 @@ defmodule Typo.PDF.Text do
   """
   @spec with_text(Page.t(), (Page.t() -> Page.t())) :: Page.t()
   def with_text(%Page{in_text: true}, _),
-    do: raise(ArgumentError, "text objects can't be nested")
+    do: raise(Typo.TextError, "text objects can't be nested")
 
   def with_text(%Page{in_text: false} = page, fun) when is_function(fun, 1) do
     state = %{page.text_state | position: {0, 0}, transform_matrix: Transform.identity()}

@@ -78,6 +78,10 @@ defmodule Typo do
     defexception [:message]
   end
 
+  defmodule TextError do
+    defexception [:message]
+  end
+
   @doc """
   Returns the library version string.
   """
