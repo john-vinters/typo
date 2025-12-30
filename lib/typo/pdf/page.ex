@@ -25,6 +25,7 @@ defmodule Typo.PDF.Page do
 
   @type t :: %__MODULE__{
           pdf: PDF.t(),
+          in_text: boolean(),
           page: Typo.page_number(),
           rotation: nil | Typo.page_rotation(),
           size: nil | Typo.page_size(),
@@ -35,6 +36,7 @@ defmodule Typo.PDF.Page do
 
   @enforce_keys [:pdf, :page]
   defstruct pdf: nil,
+            in_text: false,
             page: nil,
             rotation: nil,
             size: nil,

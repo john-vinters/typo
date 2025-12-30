@@ -22,6 +22,12 @@ defmodule Typo.PDF.Transform do
   @k :math.pi() / 180.0
 
   @doc """
+  Returns the identity matrix.
+  """
+  @spec identity :: Typo.transform_matrix()
+  def identity, do: {1, 0, 0, 1, 0, 0}
+
+  @doc """
   Returns a matrix to rotate `angle` degrees anti-clockwise.
   """
   @spec rotate(number()) :: Typo.transform_matrix()

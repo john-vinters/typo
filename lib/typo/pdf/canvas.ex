@@ -25,8 +25,9 @@ defmodule Typo.PDF.Canvas do
   alias Typo.Utils.IdMap
 
   # appends data onto the page stream.
+  @doc false
   @spec append_data(Page.t(), term()) :: Page.t()
-  defp append_data(%Page{stream: s} = page, data), do: %{page | stream: [s, data]}
+  def append_data(%Page{stream: s} = page, data), do: %{page | stream: [s, data]}
 
   @doc """
   Places a previously loaded image (`Typo.PDF.Document.load_image!`) with `tag`

@@ -17,6 +17,8 @@
 defmodule Typo.PDF.GState do
   @moduledoc false
 
+  alias Typo.PDF.Transform
+
   @type t :: %__MODULE__{
           char_spacing: number(),
           font: nil | Typo.Protocol.Font.t(),
@@ -40,6 +42,6 @@ defmodule Typo.PDF.GState do
             render: 0,
             rise: 0,
             size: 0,
-            transform_matrix: {1, 0, 0, 1, 0, 0},
+            transform_matrix: Transform.identity(),
             word_spacing: 0
 end
