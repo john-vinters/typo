@@ -101,9 +101,14 @@ defmodule Typo.PDF.Text do
 
   @doc """
   Calls `fun` to output a text object.
+
+  Note that calls to this function can't be nested.
   """
   @spec with_text(Page.t(), (Page.t() -> Page.t())) :: Page.t()
-  def with_text(%Page{} = page, fun) when is_function(fun, 1) do
+  def with_text(%Page{in_text: true}, _),
+    do: raise(ArgumentError, "text objects can't be nested")
+
+  def with_text(%Page{in_text: false} = page, fun) when is_function(fun, 1) do
     state = %{page.text_state | position: {0, 0}, transform_matrix: Transform.identity()}
 
     case fun.(append_data(%{page | in_text: true, text_state: state}, "BT")) do
