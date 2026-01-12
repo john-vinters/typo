@@ -105,7 +105,7 @@ defmodule Typo.Image.JPEG do
 
   defimpl Typo.Protocol.Object, for: Typo.Image.JPEG do
     @spec to_iodata(JPEG.t(), Keyword.t()) :: iodata()
-    def to_iodata(this, _options) do
+    def to_iodata(this, options) do
       alias Typo.Protocol.Object
 
       dict = %{
@@ -119,7 +119,7 @@ defmodule Typo.Image.JPEG do
         :Length => byte_size(this.data)
       }
 
-      [Object.to_iodata(dict), "\nstream\n", this.data, "\nendstream"]
+      [Object.to_iodata(dict, options), "\nstream\n", this.data, "\nendstream"]
     end
   end
 end

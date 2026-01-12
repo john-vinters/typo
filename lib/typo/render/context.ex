@@ -25,25 +25,25 @@ defmodule Typo.Render.Context do
   @opaque t :: %__MODULE__{
             chunk_list: [chunk_number()],
             chunks: %{optional(Typo.page_number()) => chunk_number()},
-            compression: Typo.compression(),
             image_list: [pos_integer()],
             objects: iodata(),
             offset: Typo.file_offset(),
             oid: Typo.oid(),
             ofs_map: %{optional(term) => Typo.file_offset()},
             oid_map: %{optional(term) => Typo.oid()},
+            options: Keyword.t(),
             page_list: [Typo.page_number()]
           }
 
   defstruct chunk_list: [],
             chunks: %{},
-            compression: :none,
             image_list: [],
             objects: [],
             offset: 0,
             oid: {:oid, 1, 0},
             ofs_map: %{},
             oid_map: %{},
+            options: [],
             page_list: []
 
   @doc """
@@ -93,12 +93,6 @@ defmodule Typo.Render.Context do
   def get_chunks(%Context{chunk_list: chunks}), do: chunks
 
   @doc """
-  Returns the configured compression level.
-  """
-  @spec get_compression(Context.t()) :: Typo.compression()
-  def get_compression(%Context{compression: compression}), do: compression
-
-  @doc """
   Returns the image id list.
   """
   @spec get_image_list(Context.t()) :: [pos_integer()]
@@ -121,6 +115,12 @@ defmodule Typo.Render.Context do
   """
   @spec get_oid(Context.t()) :: Typo.oid()
   def get_oid(%Context{oid: {:oid, oid, 0}}) when oid > 1, do: {:oid, oid - 1, 0}
+
+  @doc """
+  Returns the list of options.
+  """
+  @spec get_options(Context.t()) :: Keyword.t()
+  def get_options(%Context{options: options}), do: options
 
   @doc """
   Returns the list of page numbers.
@@ -154,8 +154,8 @@ defmodule Typo.Render.Context do
   @doc """
   Returns a new render context.
   """
-  @spec new :: Context.t()
-  def new, do: %Context{}
+  @spec new(Keyword.t()) :: Context.t()
+  def new(options \\ []), do: %Context{options: options}
 
   @doc """
   Outputs a PDF object with the given iodata `data`.

@@ -231,8 +231,8 @@ defmodule Typo.Image.PNG do
   defimpl Typo.Protocol.Object, for: Typo.Image.PNG do
     alias Typo.Protocol.Object
 
-    @spec alpha_iodata(PNG.t()) :: iodata()
-    defp alpha_iodata(this) do
+    @spec alpha_iodata(PNG.t(), Keyword.t()) :: iodata()
+    defp alpha_iodata(this, options) do
       data = Zlib.compress(this.alpha_data, 6)
 
       dict = %{
@@ -251,7 +251,7 @@ defmodule Typo.Image.PNG do
         }
       }
 
-      [Object.to_iodata(dict), "\nstream\n", data, "\nendstream"]
+      [Object.to_iodata(dict, options), "\nstream\n", data, "\nendstream"]
     end
 
     @spec pixel_transparency(PNG.t()) :: map()
@@ -275,8 +275,8 @@ defmodule Typo.Image.PNG do
 
     defp pixel_transparency(%PNG{has_transparency: false}), do: %{}
 
-    @spec pixel_iodata(PNG.t(), boolean()) :: iodata()
-    def pixel_iodata(this, smask) do
+    @spec pixel_iodata(PNG.t(), boolean(), Keyword.t()) :: iodata()
+    def pixel_iodata(this, smask, options) do
       data = Zlib.compress(this.image_data, 6)
       s_map = if smask, do: %{:SMask => smask}, else: %{}
 
@@ -309,14 +309,14 @@ defmodule Typo.Image.PNG do
         |> Map.merge(s_map)
         |> Map.merge(pixel_transparency(this))
 
-      [Object.to_iodata(dict), "\nstream\n", data, "\nendstream"]
+      [Object.to_iodata(dict, options), "\nstream\n", data, "\nendstream"]
     end
 
     @spec to_iodata(PNG.t(), Keyword.t()) :: iodata()
     def to_iodata(this, options) do
       case Keyword.get(options, :type, :pixel) do
-        :pixel -> pixel_iodata(this, Keyword.get(options, :smask))
-        :alpha -> alpha_iodata(this)
+        :pixel -> pixel_iodata(this, Keyword.get(options, :smask), options)
+        :alpha -> alpha_iodata(this, options)
       end
     end
   end

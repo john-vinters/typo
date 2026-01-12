@@ -146,11 +146,11 @@ defmodule Typo.PDF.Page do
 
     @spec to_iodata(Page.t(), Keyword.t()) :: iodata()
     def to_iodata(this, options) do
-      compression = Keyword.get(options, :compression, :none)
-      stream = Enum.map_intersperse(this.stream, " ", &Object.to_iodata/1)
-      length = IO.iodata_length(stream)
-      {dict, data} = compress(stream, compression, length)
-      [Object.to_iodata(dict), "\nstream\n", data, "\nendstream"]
+      compression = Keyword.get(options, :compression, Typo.default_compression())
+      str = Enum.map_intersperse(this.stream, " ", fn data -> Object.to_iodata(data, options) end)
+      length = IO.iodata_length(str)
+      {dict, data} = compress(str, compression, length)
+      [Object.to_iodata(dict, options), "\nstream\n", data, "\nendstream"]
     end
   end
 end

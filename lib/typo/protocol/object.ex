@@ -19,7 +19,7 @@ defprotocol Typo.Protocol.Object do
 
   @fallback_to_any true
   @spec to_iodata(any(), Keyword.t()) :: iodata()
-  def to_iodata(this, _options \\ [])
+  def to_iodata(this, _options)
 end
 
 defimpl Typo.Protocol.Object, for: Any do
@@ -51,15 +51,23 @@ end
 defimpl Typo.Protocol.Object, for: List do
   alias Typo.Protocol.Object
 
-  def to_iodata(this, _options),
-    do: ["[", Enum.map_intersperse(this, " ", &Object.to_iodata/1), "]"]
+  def to_iodata(this, options),
+    do: [
+      "[",
+      Enum.map_intersperse(this, " ", fn this -> Object.to_iodata(this, options) end),
+      "]"
+    ]
 end
 
 defimpl Typo.Protocol.Object, for: Map do
   alias Typo.Protocol.Object
 
-  def to_iodata(this, _options),
-    do: ["<<", Enum.map_intersperse(this, " ", &Object.to_iodata/1), ">>"]
+  def to_iodata(this, options),
+    do: [
+      "<<",
+      Enum.map_intersperse(this, " ", fn this -> Object.to_iodata(this, options) end),
+      ">>"
+    ]
 end
 
 defimpl Typo.Protocol.Object, for: Tuple do
@@ -82,6 +90,8 @@ defimpl Typo.Protocol.Object, for: Tuple do
     <<?<, bom::binary, str::binary, ?>>>
   end
 
-  def to_iodata(this, _options),
-    do: Tuple.to_list(this) |> Enum.map_intersperse(" ", &Object.to_iodata/1)
+  def to_iodata(this, options),
+    do:
+      Tuple.to_list(this)
+      |> Enum.map_intersperse(" ", fn this -> Object.to_iodata(this, options) end)
 end

@@ -45,9 +45,9 @@ defmodule Typo.Render.Core do
   @spec mediabox(Typo.page_size()) :: [number()]
   defp mediabox({w, h}), do: [0, 0, w, h]
 
-  @spec render(PDF.t()) :: iodata()
-  def render(%PDF{images: images, pages: pages} = pdf) do
-    Context.new()
+  @spec render(PDF.t(), Keyword.t()) :: iodata()
+  def render(%PDF{images: images, pages: pages} = pdf, options \\ []) when is_list(options) do
+    Context.new(options)
     |> Context.set_page_list(Map.keys(pages), @pagetree_chunk_size)
     |> Context.set_image_list(IdMap.get_ids_used(images))
     |> reserve_oids(pdf)
@@ -71,13 +71,13 @@ defmodule Typo.Render.Core do
       :Pages => Context.get_tag_oid!(ctx, :pagetree_root)
     }
 
-    Context.object(ctx, :catalogue, Object.to_iodata(dict))
+    Context.object(ctx, :catalogue, to_iodata(dict, ctx))
   end
 
   # renders PDF document information object.
   @spec render_document_info(Context.t(), PDF.t()) :: Context.t()
   defp render_document_info(ctx, pdf),
-    do: Context.object(ctx, :document_info, Object.to_iodata(pdf.metadata))
+    do: Context.object(ctx, :document_info, to_iodata(pdf.metadata, ctx))
 
   # renders PDF header lines.
   @spec render_header(Context.t()) :: Context.t()
@@ -90,8 +90,10 @@ defmodule Typo.Render.Core do
   @spec render_image_alpha(Context.t(), pos_integer(), Image.t(), boolean()) :: Context.t()
   defp render_image_alpha(ctx, _image_id, _image, false), do: ctx
 
-  defp render_image_alpha(ctx, image_id, image, true),
-    do: Context.object(ctx, {:image_alpha, image_id}, Object.to_iodata(image, type: :alpha))
+  defp render_image_alpha(ctx, image_id, image, true) do
+    options = [type: :alpha] ++ Context.get_options(ctx)
+    Context.object(ctx, {:image_alpha, image_id}, Object.to_iodata(image, options))
+  end
 
   # renders document images.
   @spec render_images(Context.t(), PDF.t()) :: Context.t()
@@ -102,9 +104,10 @@ defmodule Typo.Render.Core do
       i = IdMap.fetch_id!(pdf.images, image_id)
       alpha? = Image.has_alpha?(i)
       smask = if alpha?, do: Context.get_tag_oid!(context, {:image_alpha, image_id}), else: nil
+      options = [type: :pixel, smask: smask] ++ Context.get_options(ctx)
 
       context
-      |> Context.object({:image, image_id}, Object.to_iodata(i, type: :pixel, smask: smask))
+      |> Context.object({:image, image_id}, Object.to_iodata(i, options))
       |> render_image_alpha(image_id, i, alpha?)
     end)
   end
@@ -127,15 +130,14 @@ defmodule Typo.Render.Core do
     |> Map.merge(resources_map)
     |> then(fn map -> if pr != dr, do: Map.put(map, :Rotate, pr), else: map end)
     |> then(fn map -> if ps != ds, do: Map.put(map, :MediaBox, mediabox(ps)), else: map end)
-    |> then(fn map -> Context.object(ctx, {:page, page.page}, Object.to_iodata(map)) end)
+    |> then(fn map -> Context.object(ctx, {:page, page.page}, to_iodata(map, ctx)) end)
   end
 
   # renders an individual page stream.
   @spec render_page_stream(Context.t(), Page.t()) :: Context.t()
   defp render_page_stream(ctx, page) do
     tag = {:page_contents, page.page}
-    compression = Context.get_compression(ctx)
-    Context.object(ctx, tag, Object.to_iodata(page, compression: compression))
+    Context.object(ctx, tag, to_iodata(page, ctx))
   end
 
   # renders PDF pages.
@@ -165,7 +167,7 @@ defmodule Typo.Render.Core do
         :Parent => Context.get_tag_oid!(ctx, :pagetree_root)
       }
 
-      ctx = Context.object(context, {:pagetree, chunk_number}, Object.to_iodata(dict))
+      ctx = Context.object(context, {:pagetree, chunk_number}, to_iodata(dict, ctx))
       {ctx, chunk_number + 1}
     end)
     |> then(fn {ctx, _chunk_number} -> render_pagetree_root(ctx, pdf) end)
@@ -184,7 +186,7 @@ defmodule Typo.Render.Core do
       :MediaBox => mediabox(defaults.page_size)
     }
 
-    Context.object(ctx, :pagetree_root, Object.to_iodata(dict))
+    Context.object(ctx, :pagetree_root, to_iodata(dict, ctx))
   end
 
   # renders PDF trailer.
@@ -196,13 +198,13 @@ defmodule Typo.Render.Core do
         :Size => elem(Context.get_oid(ctx), 1) + 1,
         :Root => Context.get_tag_oid!(ctx, :catalogue)
       }
-      |> Object.to_iodata()
+      |> to_iodata(ctx)
 
     trailer = [
       "trailer\n",
       dict,
       "\nstartxref\n",
-      Object.to_iodata(Context.get_offset!(ctx, :xref)),
+      to_iodata(Context.get_offset!(ctx, :xref), ctx),
       "\n%%EOF\n"
     ]
 
@@ -214,7 +216,7 @@ defmodule Typo.Render.Core do
   defp render_xref(ctx) do
     ctx = Context.set_offset(ctx, :xref)
     max_oid = elem(Context.get_oid(ctx), 1)
-    acc = ["xref\n0 ", Object.to_iodata(max_oid + 1), "\n0000000000 65535 f\n"]
+    acc = ["xref\n0 ", to_iodata(max_oid + 1, ctx), "\n0000000000 65535 f\n"]
 
     Enum.reduce(1..max_oid, acc, fn oid, acc ->
       ofs = Context.get_offset!(ctx, {:oid, oid, 0})
@@ -263,4 +265,7 @@ defmodule Typo.Render.Core do
     end)
     |> Context.allocate_tag(:pagetree_root)
   end
+
+  @spec to_iodata(Object.t(), Context.t()) :: iodata()
+  defp to_iodata(this, ctx), do: Object.to_iodata(this, Context.get_options(ctx))
 end
