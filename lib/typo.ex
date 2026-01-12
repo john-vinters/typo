@@ -83,12 +83,6 @@ defmodule Typo do
   end
 
   @doc """
-  Returns the default compression level.
-  """
-  @spec default_compression :: compression()
-  def default_compression, do: :none
-
-  @doc """
   Returns the library version string.
   """
   @spec version :: String.t()

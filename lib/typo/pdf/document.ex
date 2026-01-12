@@ -115,6 +115,8 @@ defmodule Typo.PDF.Document do
   Creates a new empty PDF document.
 
   Options:
+    * `:compression` - sets the text compression level to `:none` or `0`..`9`,
+      where `0` is least compression and `9` is most.  Defaults to `:none`.
     * `:load_standard_fonts` if `true`, then the core 14 standard PDF fonts are
       loaded.  This defaults to `false`.  The first time the fonts are loaded in
       a running VM will take longer while the AFM files are parsed and then fonts
@@ -122,9 +124,10 @@ defmodule Typo.PDF.Document do
   """
   @spec new(Keyword.t()) :: PDF.t()
   def new(options \\ []) when is_list(options) do
+    compression = Keyword.get(options, :compression, :none)
     if Keyword.get(options, :load_standard_fonts, false), do: FontStore.register_core_fonts!()
 
-    %PDF{}
+    %PDF{compression: compression}
     |> set_metadata(:creation_date, DateTime.utc_now())
     |> set_metadata(:producer, "Typo PDF Library v#{Typo.version()}")
   end
@@ -156,7 +159,10 @@ defmodule Typo.PDF.Document do
   Renders `pdf` as iodata.
   """
   @spec to_iodata(PDF.t()) :: iodata()
-  def to_iodata(%PDF{} = pdf), do: Core.render(pdf)
+  def to_iodata(%PDF{} = pdf) do
+    options = [compression: pdf.compression]
+    Core.render(pdf, options)
+  end
 
   @doc """
   Renders `pdf` as iodata, then writes it to `filename`.

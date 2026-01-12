@@ -24,6 +24,7 @@ defmodule Typo.PDF do
 
   @type t :: %__MODULE__{
           assigns: %{optional(atom()) => term()},
+          compression: Typo.compression(),
           defaults: %{optional(atom()) => term()},
           images: IdMap.t(),
           max_page: Typo.page_number(),
@@ -34,6 +35,7 @@ defmodule Typo.PDF do
         }
 
   defstruct assigns: %{},
+            compression: :none,
             defaults: %{
               :page_size => {595, 842},
               :page_orientation => :portrait,
