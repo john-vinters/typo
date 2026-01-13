@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 
+alias Typo.PDF.Text.GlyphInfo
+
 defprotocol Typo.Protocol.Font do
   @spec get_family(any()) :: String.t()
   def get_family(this)
@@ -38,4 +40,7 @@ defprotocol Typo.Protocol.Font do
 
   @spec get_type(any()) :: Typo.font_type()
   def get_type(this)
+
+  @spec to_glyphs(any(), String.t()) :: [GlyphInfo.t()]
+  def to_glyphs(this, str)
 end

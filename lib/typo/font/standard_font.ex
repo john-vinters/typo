@@ -17,6 +17,9 @@
 defmodule Typo.Font.StandardFont do
   @moduledoc false
 
+  require Typo.PDF.Text.GlyphInfo
+  alias Typo.PDF.Text.GlyphInfo
+
   @type t :: %__MODULE__{
           ascender: number(),
           attributes: list(),
@@ -85,5 +88,18 @@ defmodule Typo.Font.StandardFont do
     def get_postscript_name(%StandardFont{font_name: name}), do: name
 
     def get_type(%StandardFont{}), do: :standard
+
+    def to_glyphs(%StandardFont{cmap: cmap, kern: kern, width: w}, str) when is_binary(str) do
+      str
+      |> String.normalize(:nfc)
+      |> String.codepoints()
+      |> Enum.map_reduce("", fn codepoint, acc ->
+        glyph = Map.get(cmap, codepoint, <<0::8>>)
+        kern = -Map.get(kern, {acc, glyph}, 0)
+        width = Map.get(w, glyph, 0)
+        {GlyphInfo.glyph_info(glyph: glyph, kern_adj: kern, size: width), glyph}
+      end)
+      |> elem(0)
+    end
   end
 end
