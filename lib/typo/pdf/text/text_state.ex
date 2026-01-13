@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-defmodule Typo.PDF.GState do
+defmodule Typo.PDF.Text.TextState do
   @moduledoc false
 
   alias Typo.PDF.Transform
