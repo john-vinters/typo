@@ -87,6 +87,8 @@ defmodule Typo.Font.StandardFont do
 
     def get_hash(%StandardFont{hash: hash}), do: hash
 
+    def get_is_italic(%StandardFont{is_italic: is_italic}), do: is_italic
+
     def get_postscript_name(%StandardFont{font_name: name}), do: name
 
     def get_type(%StandardFont{}), do: :standard

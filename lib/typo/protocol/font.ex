@@ -35,6 +35,9 @@ defprotocol Typo.Protocol.Font do
   @spec get_hash(any()) :: Typo.font_hash()
   def get_hash(this)
 
+  @spec get_is_italic(any()) :: boolean()
+  def get_is_italic(this)
+
   @spec get_postscript_name(any()) :: String.t()
   def get_postscript_name(this)
 
