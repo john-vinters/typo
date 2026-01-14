@@ -28,21 +28,21 @@ defmodule Typo.Utils.Format do
     hour = zero_pad(dt.hour, 2)
     min = zero_pad(dt.minute, 2)
     sec = zero_pad(dt.second, 2)
-
-    offset =
-      if dt.time_zone == "Etc/UTC" do
-        "Z"
-      else
-        total_offs = dt.utc_offset + dt.std_offset
-        {plus, offs} = if total_offs < 0, do: {"-", total_offs}, else: {"+", total_offs}
-        offs_hours = div(offs, 3600)
-        offs_mins = div(offs - offs_hours * 3600, 60)
-        oh = zero_pad(offs_hours, 2)
-        om = zero_pad(offs_mins, 2)
-        "#{plus}#{oh}'#{om}"
-      end
-
+    offset = literal_date_time_offset(dt)
     <<?(, "D:#{year}#{month}#{day}#{hour}#{min}#{sec}#{offset}", ?)>>
+  end
+
+  @spec literal_date_time_offset(DateTime.t()) :: String.t()
+  defp literal_date_time_offset(%DateTime{time_zone: "Etc/UTC"}), do: "Z"
+
+  defp literal_date_time_offset(%DateTime{} = dt) do
+    total_offs = dt.utc_offset + dt.std_offset
+    {plus, offs} = if total_offs < 0, do: {"-", total_offs}, else: {"+", total_offs}
+    offs_hours = div(offs, 3600)
+    offs_mins = div(offs - offs_hours * 3600, 60)
+    oh = zero_pad(offs_hours, 2)
+    om = zero_pad(offs_mins, 2)
+    "#{plus}#{oh}'#{om}"
   end
 
   @doc """
