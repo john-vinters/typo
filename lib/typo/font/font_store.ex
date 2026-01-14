@@ -58,6 +58,15 @@ defmodule Typo.Font.FontStore do
   end
 
   @doc """
+  Returns the list of fonts associated with a given font family name.
+  """
+  @spec get_family_fonts(String.t()) :: [Typo.font_index()]
+  def get_family_fonts(family) when is_binary(family) do
+    store = get_store()
+    Map.get(store.family, String.downcase(family), [])
+  end
+
+  @doc """
   Returns the font with the given `id`, which may be either a `Typo.font_index()` type or
   a `Typo.font_hash()` type.
 
