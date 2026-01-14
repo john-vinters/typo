@@ -36,14 +36,15 @@ defmodule Typo.Font.StandardFont do
           is_italic: boolean(),
           italic_angle: number(),
           kern: %{optional({Typo.glyph(), Typo.glyph()}) => number()},
-          otf_weight: Typo.font_weight(),
           stem_h: number(),
           stem_v: number(),
           underline_position: number(),
           underline_thickness: number(),
           x_height: number(),
           weight: String.t(),
-          width: %{optional(Typo.glyph()) => number()}
+          weight_class: Typo.weight_class(),
+          width: %{optional(Typo.glyph()) => number()},
+          width_class: Typo.width_class()
         }
 
   defstruct ascender: 0,
@@ -61,14 +62,15 @@ defmodule Typo.Font.StandardFont do
             is_italic: false,
             italic_angle: 0.0,
             kern: %{},
-            otf_weight: 400,
             stem_h: 0,
             stem_v: 0,
             underline_position: 0,
             underline_thickness: 0,
             x_height: 0,
             weight: "MEDIUM",
-            width: %{}
+            weight_class: 400,
+            width: %{},
+            width_class: 100
 
   defimpl Typo.Protocol.Font, for: Typo.Font.StandardFont do
     alias Typo.Font.StandardFont
@@ -88,6 +90,10 @@ defmodule Typo.Font.StandardFont do
     def get_postscript_name(%StandardFont{font_name: name}), do: name
 
     def get_type(%StandardFont{}), do: :standard
+
+    def get_weight_class(%StandardFont{weight_class: weight}), do: weight
+
+    def get_width_class(%StandardFont{width_class: width}), do: width
 
     def to_glyphs(%StandardFont{cmap: cmap, kern: kern, width: w}, str) when is_binary(str) do
       str

@@ -58,8 +58,8 @@ defmodule Typo do
           | {:slant, font_slant()}
           | {:spacing, font_spacing()}
           | {:type, font_type()}
-          | {:weight, font_weight()}
-          | {:width, font_width}
+          | {:weight, weight_class()}
+          | {:width, width_class()}
         ]
   @type font_face :: {font_attrs(), pos_integer()}
   @type font_hash :: binary()
@@ -67,8 +67,8 @@ defmodule Typo do
   @type font_slant :: number()
   @type font_spacing :: :fixed | :variable
   @type font_type :: :opentype | :standard
-  @type font_weight :: 0..1000
-  @type font_width :: 0..200
+  @type weight_class :: 0..1000
+  @type width_class :: 0..200
 
   defmodule FontError do
     defexception [:message]

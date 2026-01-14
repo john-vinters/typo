@@ -41,6 +41,12 @@ defprotocol Typo.Protocol.Font do
   @spec get_type(any()) :: Typo.font_type()
   def get_type(this)
 
+  @spec get_weight_class(any()) :: Typo.weight_class()
+  def get_weight_class(this)
+
+  @spec get_width_class(any()) :: Typo.width_class()
+  def get_width_class(this)
+
   @spec to_glyphs(any(), String.t()) :: [GlyphInfo.t()]
   def to_glyphs(this, str)
 end

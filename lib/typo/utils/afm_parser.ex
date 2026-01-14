@@ -197,14 +197,14 @@ defmodule Typo.Utils.AFMParser do
     pitch = if font.is_fixed_pitch, do: [:fix_pitch], else: [:var_pitch]
     attrs = bold ++ italic ++ pitch
 
-    otf_weight =
+    weight_class =
       case weight do
         "BOLD" -> 700
         "MEDIUM" -> 500
         _ -> 400
       end
 
-    %{font | attributes: attrs, is_italic: is_italic, otf_weight: otf_weight}
+    %{font | attributes: attrs, is_italic: is_italic, weight_class: weight_class}
   end
 
   @spec update_cmap(StandardFont.t(), :symbol | :winansi | :zapf_dingbats) :: StandardFont.t()
