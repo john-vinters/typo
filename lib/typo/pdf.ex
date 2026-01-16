@@ -26,6 +26,7 @@ defmodule Typo.PDF do
           assigns: %{optional(atom()) => term()},
           compression: Typo.compression(),
           defaults: %{optional(atom()) => term()},
+          fonts: IdMap.t(),
           images: IdMap.t(),
           max_page: Typo.page_number(),
           metadata: %{
@@ -41,6 +42,7 @@ defmodule Typo.PDF do
               :page_orientation => :portrait,
               :page_rotation => 0
             },
+            fonts: IdMap.new(),
             images: IdMap.new(),
             max_page: 0,
             metadata: %{},
