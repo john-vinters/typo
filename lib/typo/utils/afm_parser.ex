@@ -191,7 +191,7 @@ defmodule Typo.Utils.AFMParser do
 
   @spec update_attributes(StandardFont.t()) :: StandardFont.t()
   defp update_attributes(%StandardFont{weight: weight} = font) do
-    is_italic = font.italic_angle == 0
+    is_italic = abs(font.italic_angle) > 0.1
     bold = if weight == "BOLD", do: [:bold], else: [:medium]
     italic = if is_italic, do: [:italic], else: []
     pitch = if font.is_fixed_pitch, do: [:fix_pitch], else: [:var_pitch]
