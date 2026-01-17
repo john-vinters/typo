@@ -61,10 +61,11 @@ defmodule Typo.Font.FontStore do
   Returns the list of fonts associated with a given font family name.
   """
   @spec get_family_fonts(String.t()) :: [Typo.font_index()]
-  def get_family_fonts(family) when is_binary(family) do
-    store = get_store()
-    Map.get(store.family, String.downcase(family), [])
-  end
+  def get_family_fonts(family) when is_binary(family), do: get_family_fonts(get_store(), family)
+
+  @spec get_family_fonts(FontStore.t(), String.t()) :: [Typo.font_index()]
+  def get_family_fonts(%FontStore{} = store, family) when is_binary(family),
+    do: Map.get(store.family, String.downcase(family), [])
 
   @doc """
   Returns the font with the given `id`, which may be either a `Typo.font_index()` type or
@@ -192,6 +193,69 @@ defmodule Typo.Font.FontStore do
     |> then(fn st -> %{st | fonts: Map.put(st.fonts, {type, :ps_name, ps_name}, st.seq)} end)
     |> update_families(family)
   end
+
+  # selects a font using an approximation of the CSS font selection algorithm.
+  @spec select_font(String.t(), boolean(), Typo.weight_class(), Typo.width_class()) ::
+          nil | {Typo.font_index(), Font.t()}
+  def select_font(name, italic, weight, width) do
+    case get_family_fonts(name) do
+      [] ->
+        nil
+
+      f when is_list(f) ->
+        f
+        |> Enum.map(fn fid -> {fid, get_font(fid)} end)
+        |> select_font_width(width)
+        |> select_font_italic(italic)
+        |> select_font_weight(weight)
+        |> List.first()
+    end
+  end
+
+  @spec select_font_italic([{Typo.font_index(), Font.t()}], boolean()) :: [
+          {Typo.font_index(), Font.t()}
+        ]
+  defp select_font_italic(fonts, italic),
+    do: Enum.filter(fonts, fn {_, font} -> Font.get_is_italic(font) == italic end)
+
+  @spec select_font_weight([{Typo.font_index(), Font.t()}], Typo.weight_class()) :: [
+          {Typo.font_index(), Font.t()}
+        ]
+  defp select_font_weight(fonts, weight) do
+    Enum.map(fonts, fn {index, font} ->
+      w = Font.get_weight_class(font)
+      {abs(weight - w), index, font, w}
+    end)
+    |> Enum.split_with(fn {_err, _index, _font, w} -> w < weight end)
+    |> then(fn {light, heavy} ->
+      if weight <= 500,
+        do: sort_error(light) ++ sort_error(heavy),
+        else: sort_error(heavy) ++ sort_error(light)
+    end)
+    |> Enum.map(fn {_err, index, font, _w} -> {index, font} end)
+  end
+
+  @spec select_font_width([{Typo.font_index(), Font.t()}], Typo.width_class()) :: [
+          {Typo.font_index(), Font.t()}
+        ]
+  defp select_font_width(fonts, width) do
+    Enum.map(fonts, fn {index, font} ->
+      w = Font.get_width_class(font)
+      {abs(width - w), index, font, w}
+    end)
+    |> Enum.split_with(fn {_err, _index, _font, w} -> w < width end)
+    |> then(fn {thinner, wider} ->
+      if width <= 100,
+        do: sort_error(thinner) ++ sort_error(wider),
+        else: sort_error(wider) ++ sort_error(thinner)
+    end)
+    |> Enum.map(fn {_err, index, font, _w} -> {index, font} end)
+  end
+
+  # sorts font list by ascending error value.
+  @spec sort_error([{number(), Font.t(), number()}]) :: [{number(), Font.t(), number()}]
+  defp sort_error(fonts),
+    do: Enum.sort(fonts, fn {e1, _i1, _f1, _w1}, {e2, _i2, _f2, _w2} -> e1 <= e2 end)
 
   # stores a font - NOTE: the caller *MUST* have the exclusive font lock held.
   @spec store_font(FontStore.t(), Typo.Protocol.Font.t()) :: FontStore.t()
