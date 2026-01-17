@@ -72,6 +72,14 @@ defmodule Typo.Font.StandardFont do
             width: %{},
             width_class: 100
 
+  defimpl Inspect, for: Typo.Font.StandardFont do
+    def inspect(font, _opts) do
+      name = inspect(font.full_name)
+      attrs = inspect(font.attributes)
+      "%StandardFont<#{name} #{attrs}>"
+    end
+  end
+
   defimpl Typo.Protocol.Font, for: Typo.Font.StandardFont do
     alias Typo.Font.StandardFont
 
