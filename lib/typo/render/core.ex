@@ -38,7 +38,10 @@ defmodule Typo.Render.Core do
         Map.put(acc, "/Im#{image_id}", oid)
       end)
 
-    if map_size(xobjects) > 0, do: %{XObject: xobjects}, else: %{}
+    %{
+      :ProcSet => [:PDF, :Text, :ImageB, :ImageC, :ImageI],
+      :XObject => xobjects
+    }
   end
 
   # returns box defining page size.
