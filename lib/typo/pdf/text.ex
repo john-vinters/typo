@@ -21,6 +21,7 @@ defmodule Typo.PDF.Text do
 
   import Typo.PDF.Canvas, only: [append_data: 2]
   import Typo.Utils.Guards
+  alias Typo.Font.FontStore
   alias Typo.PDF.{Page, Transform}
 
   @doc """
@@ -43,6 +44,49 @@ defmodule Typo.PDF.Text do
     |> update_state(:position, p)
     |> update_state(:transform_matrix, matrix)
     |> append_data({matrix, "Tm"})
+  end
+
+  @doc """
+  Selects a font given the font family name, size and a keyword list specifying
+  font attributes:
+    * `italic` - if `true`, the font must be italic/oblique.
+      (defaults to `false` if not specified).
+    * `weight` - a number from `0` to `1000` specifying the font weight
+      (defaults to `400` if not specified).
+    * `width` - a number from `0` to `200` specifying the font width (defaults to
+      `100` if not specified).
+
+    The font search is done with an approximation of the CSS font selection
+    algorithm, which matches in order by font family name, closest width, italics and
+    closest font weight.
+
+    If no matching font is selected, then `Typo.FontError` is raised.
+  """
+  @spec select_font(Page.t(), String.t(), number(), Keyword.t()) :: Page.t()
+  def select_font(page, name, size, options \\ [])
+
+  def select_font(%Page{in_text: false}, _name, _size, _options),
+    do: raise(Typo.TextError, "this function must only be called from a with_text/2 function.")
+
+  def select_font(%Page{in_text: true} = page, name, size, options)
+      when is_number(size) and is_list(options) do
+    italic = Keyword.get(options, :italic, false)
+    !is_boolean(italic) && raise ArgumentError, "invalid italic: #{inspect(italic)}"
+    we = Keyword.get(options, :weight, 400)
+    (we < 0 || we > 1000) && raise ArgumentError, "invalid weight: #{inspect(we)}"
+    wd = Keyword.get(options, :width, 100)
+    (wd < 0 || wd > 200) && raise ArgumentError, "invalid width: #{inspect(wd)}"
+
+    case FontStore.select_font(name, italic, we, wd) do
+      nil ->
+        raise Typo.FontError, "font #{inspect(name)} #{inspect(options)} not found"
+
+      {font_id, font} when is_integer(font_id) ->
+        page
+        |> update_state(:font_id, font_id)
+        |> update_state(:font, font)
+        |> append_data({"/F#{font_id}", size, "Tf"})
+    end
   end
 
   @doc """
