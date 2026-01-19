@@ -41,8 +41,7 @@ defmodule Typo.PDF.Text do
     matrix = Transform.translate(x, y)
 
     page
-    |> update_state(:position, p)
-    |> update_state(:transform_matrix, matrix)
+    |> update_state(position: p, transform_matrix: matrix)
     |> append_data({matrix, "Tm"})
   end
 
@@ -83,8 +82,7 @@ defmodule Typo.PDF.Text do
 
       {font_id, font} when is_integer(font_id) ->
         page
-        |> update_state(:font_id, font_id)
-        |> update_state(:font, font)
+        |> update_state(font_id: font_id, font: font, size: size)
         |> append_data({"/F#{font_id}", size, "Tf"})
     end
   end
@@ -95,7 +93,7 @@ defmodule Typo.PDF.Text do
   @spec set_character_spacing(Page.t(), number()) :: Page.t()
   def set_character_spacing(%Page{} = page, space) when is_number(space) do
     page
-    |> update_state(:char_spacing, space)
+    |> update_state(char_spacing: space)
     |> append_data({space, "Tc"})
   end
 
@@ -105,7 +103,7 @@ defmodule Typo.PDF.Text do
   @spec set_horizontal_scale(Page.t(), number()) :: Page.t()
   def set_horizontal_scale(%Page{} = page, scale) when is_number(scale) do
     page
-    |> update_state(:horizontal_scale, scale)
+    |> update_state(horizontal_scale: scale)
     |> append_data({scale, "Tz"})
   end
 
@@ -115,7 +113,7 @@ defmodule Typo.PDF.Text do
   @spec set_leading(Page.t(), number()) :: Page.t()
   def set_leading(%Page{} = page, leading) when is_number(leading) do
     page
-    |> update_state(:leading, leading)
+    |> update_state(leading: leading)
     |> append_data({leading, "Tl"})
   end
 
@@ -125,7 +123,7 @@ defmodule Typo.PDF.Text do
   @spec set_rise(Page.t(), number()) :: Page.t()
   def set_rise(%Page{} = page, rise) when is_number(rise) do
     page
-    |> update_state(:rise, rise)
+    |> update_state(rise: rise)
     |> append_data({rise, "Tr"})
   end
 
@@ -135,13 +133,17 @@ defmodule Typo.PDF.Text do
   @spec set_word_spacing(Page.t(), number()) :: Page.t()
   def set_word_spacing(%Page{} = page, space) when is_number(space) do
     page
-    |> update_state(:word_spacing, space)
+    |> update_state(word_spacing: space)
     |> append_data({space, "Tw"})
   end
 
   # updates internal text state.
-  defp update_state(%Page{} = page, key, value),
-    do: %{page | text_state: Map.replace(page.text_state, key, value)}
+  @spec update_state(Page.t(), Keyword.t()) :: Page.t()
+  defp update_state(%Page{} = page, attrs) when is_list(attrs) do
+    attrs
+    |> Enum.reduce(page.text_state, fn {k, v}, acc -> Map.replace!(acc, k, v) end)
+    |> then(fn state -> %{page | text_state: state} end)
+  end
 
   @doc """
   Calls `fun` to output a text object.
