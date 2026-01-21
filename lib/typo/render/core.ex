@@ -218,11 +218,11 @@ defmodule Typo.Render.Core do
   defp render_xref(ctx) do
     ctx = Context.set_offset(ctx, :xref)
     max_oid = elem(Context.get_oid(ctx), 1)
-    acc = ["xref\n0 ", to_iodata(max_oid + 1, ctx), "\n0000000000 65535 f\n"]
+    acc = ["xref\n0 ", to_iodata(max_oid + 1, ctx), "\n0000000000 65535 f\r\n"]
 
     Enum.reduce(1..max_oid, acc, fn oid, acc ->
       ofs = Context.get_offset!(ctx, {:oid, oid, 0})
-      [acc, String.pad_leading(to_string(ofs), 10, "0"), " 00000 n\n"]
+      [acc, String.pad_leading(to_string(ofs), 10, "0"), " 00000 n\r\n"]
     end)
     |> then(fn r -> Context.append(ctx, IO.iodata_to_binary(r)) end)
   end
