@@ -22,9 +22,9 @@ defmodule Typo.PDF.Text.TextState do
   @type t :: %__MODULE__{
           char_spacing: number(),
           font: nil | Typo.Protocol.Font.t(),
-          font_id: nil | pos_integer(),
+          font_id: nil | Typo.font_index(),
           horizontal_scale: number(),
-          leading: number(),
+          leading: Typo.leading(),
           position: Typo.xy(),
           render: 0..7,
           rise: number(),

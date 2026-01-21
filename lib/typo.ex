@@ -68,6 +68,7 @@ defmodule Typo do
   @type font_slant :: number()
   @type font_spacing :: :fixed | :variable
   @type font_type :: :opentype | :standard
+  @type leading :: number()
   @type weight_class :: 0..1000
   @type width_class :: 0..200
 
