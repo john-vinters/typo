@@ -28,7 +28,7 @@ defmodule Typo.PDF.Text.TextState do
           position: Typo.xy(),
           render: 0..7,
           rise: number(),
-          size: number(),
+          size: Typo.font_size(),
           transform_matrix: Typo.transform_matrix(),
           word_spacing: number()
         }

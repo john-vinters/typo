@@ -64,6 +64,7 @@ defmodule Typo do
   @type font_face :: {font_attrs(), pos_integer()}
   @type font_hash :: binary()
   @type font_index :: pos_integer()
+  @type font_size :: number()
   @type font_slant :: number()
   @type font_spacing :: :fixed | :variable
   @type font_type :: :opentype | :standard

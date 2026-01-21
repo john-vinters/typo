@@ -61,7 +61,7 @@ defmodule Typo.PDF.Text do
 
     If no matching font is selected, then `Typo.FontError` is raised.
   """
-  @spec select_font(Page.t(), String.t(), number(), Keyword.t()) :: Page.t()
+  @spec select_font(Page.t(), String.t(), Typo.font_size(), Keyword.t()) :: Page.t()
   def select_font(page, name, size, options \\ [])
 
   def select_font(%Page{in_text: false}, _name, _size, _options),
