@@ -17,7 +17,7 @@
 defmodule Typo.Render.Core do
   @moduledoc false
 
-  @pdf_header <<"%PDF-2.0\n", ?%::8, 255::8, 255::8, 255::8>>
+  @pdf_header <<"%PDF-2.0\n", ?%::8, 255::8, 255::8, 255::8, 255::8>>
   @pagetree_chunk_size 50
 
   alias Typo.PDF
