@@ -29,6 +29,9 @@ defmodule Typo.PDF.Text.TextState do
           render: 0..7,
           rise: number(),
           size: Typo.font_size(),
+          subscript: boolean(),
+          superscript: boolean(),
+          underline: boolean(),
           transform_matrix: Typo.transform_matrix(),
           word_spacing: number()
         }
@@ -42,6 +45,9 @@ defmodule Typo.PDF.Text.TextState do
             render: 0,
             rise: 0,
             size: 0,
+            subscript: false,
+            superscript: false,
+            underline: false,
             transform_matrix: Transform.identity(),
             word_spacing: 0
 end
