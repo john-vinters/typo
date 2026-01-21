@@ -118,8 +118,7 @@ defmodule Typo.Render.Core do
   # renders an individual page.
   @spec render_page(Context.t(), PDF.t(), Page.t()) :: Context.t()
   defp render_page(ctx, %PDF{defaults: defaults} = pdf, page) do
-    resources = get_page_resources(ctx, pdf, page)
-    resources_map = if map_size(resources) > 0, do: %{:Resources => resources}, else: %{}
+    resources_map = %{:Resources => get_page_resources(ctx, pdf, page)}
     dr = defaults.page_rotation
     ds = defaults.page_size
     pr = page.rotation
