@@ -23,6 +23,9 @@ defmodule SerializationTest do
   end
 
   test "hexadecimal string objects" do
+    assert to_iodata({:utf8, "Hello, PDF world!"}, []) ==
+             "<EFBBBF48656C6C6F2C2050444620776F726C6421>"
+
     assert to_iodata({:utf16be, "Hello, PDF world!"}, []) ==
              "<FEFF00480065006C006C006F002C002000500044004600200077006F0072006C00640021>"
   end

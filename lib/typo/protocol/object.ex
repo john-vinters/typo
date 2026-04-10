@@ -84,6 +84,17 @@ defimpl Typo.Protocol.Object, for: Tuple do
   def to_iodata({:raw, this}, _options), do: this
 
   # §7.3.4.3 (hexadecimal strings)
+  def to_iodata({:utf8, this}, _options) do
+    bom = :unicode.encoding_to_bom(:utf8) |> Base.encode16()
+
+    str =
+      this
+      |> String.normalize(:nfc)
+      |> Base.encode16()
+
+    <<?<, bom::binary, str::binary, ?>>>
+  end
+
   def to_iodata({:utf16be, this}, _options) do
     bom = :unicode.encoding_to_bom(:utf16) |> Base.encode16()
 
