@@ -125,4 +125,9 @@ defmodule Typo.PDF.Page do
     |> save()
     |> select(page)
   end
+
+  defimpl Typo.Protocol.OpStream, for: Page do
+    def append_stream(%Page{} = page, data), do: %{page | stream: [page.stream, data]}
+    def get_stream(%Page{stream: stream}), do: stream
+  end
 end
