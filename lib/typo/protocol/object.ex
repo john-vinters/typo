@@ -81,6 +81,8 @@ end
 defimpl Typo.Protocol.Object, for: Tuple do
   alias Typo.Protocol.Object
 
+  def to_iodata({:oid, id, version}, _options), do: "#{id} #{version} R"
+
   def to_iodata({:raw, this}, _options), do: this
 
   # §7.3.4.3 (hexadecimal strings)

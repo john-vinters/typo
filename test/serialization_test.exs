@@ -46,6 +46,10 @@ defmodule SerializationTest do
     assert to_iodata(:"The_Key_of_F#_Minor", []) == "/The_Key_of_F#23_Minor"
   end
 
+  test "oid reference objects" do
+    assert to_iodata({:oid, 2, 0}, []) == "2 0 R"
+  end
+
   test "array objects" do
     assert to_iodata([], []) == "[]"
     assert to_iodata([549, 3.14, false, :SomeName], []) == "[549 3.14 false /SomeName]"
