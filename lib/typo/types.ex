@@ -19,10 +19,17 @@ defmodule Typo.Types do
   Useful type definitions.
   """
 
+  @type colour :: colour_cmyk() | colour_greyscale() | colour_rgb()
+  @type colour_cmyk :: {number(), number(), number(), number()}
+  @type colour_greyscale :: number()
+  @type colour_rgb :: {number(), number(), number()}
   @type compression :: :none | 0..9
+  @type line_cap :: :butt | :round | :square
+  @type line_join :: :bevel | :miter | :mitre | :round
   @type page_number :: integer()
   @type page_orientation :: :landscape | :portrait
   @type page_rotation :: 0 | 90 | 180 | 270
   @type page_size :: {number(), number()}
   @type page_type :: :page | :xform
+  @type transform_matrix :: {number(), number(), number(), number(), number(), number()}
 end
