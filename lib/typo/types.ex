@@ -31,6 +31,9 @@ defmodule Typo.Types do
   @type page_rotation :: 0 | 90 | 180 | 270
   @type page_size :: {number(), number()}
   @type page_type :: :page | :xform
+  @type path_paint_options :: [
+          {:close | :fill | :stroke, boolean()} | {:winding, winding_rule()}
+        ]
   @type transform_matrix :: {number(), number(), number(), number(), number(), number()}
   @type winding_rule :: {:even_odd, :nonzero}
   @type xy :: {number(), number()}
