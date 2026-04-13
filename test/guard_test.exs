@@ -99,6 +99,15 @@ defmodule GuardTest do
     assert is_transform_matrix({:a, :b, :c, :d, :e, :f}) == false
   end
 
+  test "is_winding_rule" do
+    assert is_winding_rule(:even_odd) == true
+    assert is_winding_rule(:nonzero) == true
+    assert is_winding_rule(:non_zero) == false
+    assert is_winding_rule(0) == false
+    assert is_winding_rule({:a, :b}) == false
+    assert is_winding_rule([]) == false
+  end
+
   test "is_xy" do
     assert is_xy({0, 0}) == true
     assert is_xy({1.0, 0}) == true

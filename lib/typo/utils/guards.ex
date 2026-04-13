@@ -42,5 +42,7 @@ defmodule Typo.Utils.Guards do
            when is_tuple(m, 6) and is_number(m, 0) and is_number(m, 1) and is_number(m, 2) and
                   is_number(m, 3) and is_number(m, 4) and is_number(m, 5)
 
+  defguard is_winding_rule(r) when r in [:even_odd, :nonzero]
+
   defguard is_xy(p) when is_tuple(p, 2) and is_number(p, 0) and is_number(p, 1)
 end
