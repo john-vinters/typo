@@ -32,4 +32,5 @@ defmodule Typo.Types do
   @type page_size :: {number(), number()}
   @type page_type :: :page | :xform
   @type transform_matrix :: {number(), number(), number(), number(), number(), number()}
+  @type xy :: {number(), number()}
 end

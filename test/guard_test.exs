@@ -98,4 +98,14 @@ defmodule GuardTest do
     assert is_transform_matrix([]) == false
     assert is_transform_matrix({:a, :b, :c, :d, :e, :f}) == false
   end
+
+  test "is_xy" do
+    assert is_xy({0, 0}) == true
+    assert is_xy({1.0, 0}) == true
+    assert is_xy({0, 1.0}) == true
+    assert is_xy({-1.0, -1.0}) == true
+    assert is_xy(0) == false
+    assert is_xy(:test) == false
+    assert is_xy([]) == false
+  end
 end
