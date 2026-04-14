@@ -126,6 +126,34 @@ defmodule Typo.PDF.Page do
     |> select(page)
   end
 
+  defimpl Typo.Protocol.Object, for: Page do
+    alias Typo.Protocol.Object
+    alias Typo.Utils.Zlib
+
+    @spec compress(iodata(), Types.compression(), non_neg_integer()) :: {map(), iodata()}
+    defp compress(stream, :none, length), do: {%{:Length => length}, stream}
+
+    defp compress(stream, level, length) do
+      zstream = Zlib.compress(stream, level)
+      zlength = IO.iodata_length(zstream)
+
+      if zlength < length do
+        {%{:Filter => :FlateDecode, :Length => zlength}, zstream}
+      else
+        {%{:Length => :length}, stream}
+      end
+    end
+
+    @spec to_iodata(Page.t(), Keyword.t()) :: iodata()
+    def to_iodata(this, options) do
+      compression = Keyword.get(options, :compression, :none)
+      str = Enum.map_intersperse(this.stream, " ", fn data -> Object.to_iodata(data, options) end)
+      length = IO.iodata_length(str)
+      {dict, data} = compress(str, compression, length)
+      [Object.to_iodata(dict, options), "\nstream\n", data, "\nendstream"]
+    end
+  end
+
   defimpl Typo.Protocol.OpStream, for: Page do
     def append_stream(%Page{} = page, data), do: %{page | stream: [page.stream, data]}
     def get_stream(%Page{stream: stream}), do: stream
