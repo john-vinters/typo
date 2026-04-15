@@ -26,6 +26,15 @@ defmodule Typo.Types do
   @type compression :: :none | 0..9
   @type line_cap :: :butt | :round | :square
   @type line_join :: :bevel | :miter | :mitre | :round
+  @type metadata_field ::
+          :author
+          | :creation_date
+          | :creator
+          | :keywords
+          | :mod_date
+          | :producer
+          | :subject
+          | :title
   @type page_number :: integer()
   @type page_orientation :: :landscape | :portrait
   @type page_rotation :: 0 | 90 | 180 | 270

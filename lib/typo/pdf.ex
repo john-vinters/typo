@@ -27,6 +27,9 @@ defmodule Typo.PDF do
           compression: Types.compression(),
           defaults: %{optional(atom()) => term()},
           max_page: Types.page_number(),
+          metadata: %{
+            optional(Types.metadata_field()) => {:utf8, String.t()} | {:literal, DateTime.t()}
+          },
           pages: %{optional(Types.page_number()) => Page.t()}
         }
 
@@ -38,5 +41,6 @@ defmodule Typo.PDF do
               :page_rotation => 0
             },
             max_page: 0,
+            metadata: %{},
             pages: %{}
 end
