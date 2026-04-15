@@ -2,6 +2,13 @@ defmodule GuardTest do
   use ExUnit.Case
   import Typo.Utils.Guards
 
+  test "is_compression" do
+    assert is_compression(:none) == true
+    Enum.each(0..9, fn c -> assert is_compression(c) == true end)
+    assert is_compression(10) == false
+    assert is_compression([]) == false
+  end
+
   test "is_colour_cmyk" do
     assert is_colour_cmyk({0.0, 0.0, 0.0, 0.0}) == true
     assert is_colour_cmyk({0.5, 0.5, 0.5, 0.5}) == true

@@ -23,6 +23,8 @@ defmodule Typo.Utils.Guards do
   defguard is_tuple(t, n) when is_tuple(t) and tuple_size(t) == n
   defguard is_number(t, n) when is_number(elem(t, n))
 
+  defguard is_compression(c) when c == :none or c in 0..9
+
   defguard is_colour_cmyk(c)
            when is_tuple(c, 4) and is_colour(c, 0) and is_colour(c, 1) and is_colour(c, 2) and
                   is_colour(c, 3)
