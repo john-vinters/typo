@@ -26,7 +26,7 @@ defmodule Typo.PDF.Page do
 
   @type t :: %__MODULE__{
           pdf: nil | PDF.t(),
-          type: :page,
+          type: :page | :xform,
           page: Types.page_number(),
           rotation: nil | Types.page_rotation(),
           size: nil | Types.page_size(),
@@ -152,10 +152,5 @@ defmodule Typo.PDF.Page do
       {dict, data} = compress(str, compression, length)
       [Object.to_iodata(dict, options), "\nstream\n", data, "\nendstream"]
     end
-  end
-
-  defimpl Typo.Protocol.OpStream, for: Page do
-    def append_stream(%Page{} = page, data), do: %{page | stream: [page.stream, data]}
-    def get_stream(%Page{stream: stream}), do: stream
   end
 end

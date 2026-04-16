@@ -20,8 +20,7 @@ defmodule Typo.PDF.Path do
   """
 
   import Typo.Utils.Guards
-  alias Typo.PDF.Path
-  alias Typo.Protocol.OpStream
+  alias Typo.PDF.{Page, Path}
   alias Typo.Types
 
   @type t :: %__MODULE__{stream: term()}
@@ -108,10 +107,10 @@ defmodule Typo.PDF.Path do
   `fun` should call functions in this module to generate the path, then call
   `paint/2` to stroke/fill the path.
   """
-  @spec new(OpStream.t(), (Path.t() -> Path.t())) :: OpStream.t()
-  def new(stream, fun) when is_function(fun, 1) do
+  @spec new(Page.t(), (Path.t() -> Path.t())) :: Page.t()
+  def new(%Page{} = page, fun) when is_function(fun, 1) do
     case fun.(%Path{stream: []}) do
-      %Path{} = path -> OpStream.append_stream(stream, path.stream)
+      %Path{} = path -> %{page | stream: [page.stream, path.stream]}
       other -> raise ArgumentError, "expected a Path struct, got: #{inspect(other)}"
     end
   end
