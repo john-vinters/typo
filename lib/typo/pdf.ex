@@ -21,6 +21,7 @@ defmodule Typo.PDF do
 
   alias Typo.PDF.Page
   alias Typo.Types
+  alias Typo.Utils.UUID
 
   @type t :: %__MODULE__{
           assigns: %{optional(atom()) => term()},
@@ -30,7 +31,8 @@ defmodule Typo.PDF do
           metadata: %{
             optional(Types.metadata_field()) => {:utf8, String.t()} | {:literal, DateTime.t()}
           },
-          pages: %{optional(Types.page_number()) => Page.t()}
+          objects: %{optional(UUID.t()) => Page.t()},
+          pages: %{optional(Types.page_number()) => UUID.t()}
         }
 
   defstruct assigns: %{},
@@ -42,5 +44,6 @@ defmodule Typo.PDF do
             },
             max_page: 0,
             metadata: %{},
+            objects: %{},
             pages: %{}
 end

@@ -98,7 +98,7 @@ defmodule Typo.PDF.Page do
     !is_page_size(s) && raise ArgumentError, "invalid page size: #{inspect(s)}"
     size = apply_orientation(s, o)
     pdf = %{pdf | max_page: max_page}
-    %Page{pdf: pdf, page: p_num, rotation: r, size: size, uuid: UUID.generate()}
+    %Page{pdf: pdf, page: p_num, rotation: r, size: size, type: :page, uuid: UUID.generate()}
   end
 
   def new(%Page{} = page, options) when is_list(options) do
@@ -111,9 +111,12 @@ defmodule Typo.PDF.Page do
   Saves the current page, returning the updated `PDF` struct.
   """
   @spec save(Page.t()) :: PDF.t()
-  def save(%Page{pdf: %PDF{} = pdf, stream: stream} = page) do
+  def save(%Page{pdf: %PDF{} = pdf, type: :page, stream: stream} = page) do
     page = %{page | pdf: nil, stream: List.flatten(stream)}
-    %{pdf | pages: Map.put(pdf.pages, {page.type, page.page}, page)}
+    id = Page.get_id(page)
+    pages = Map.put(pdf.pages, page.page, id)
+    objects = Map.put(pdf.objects, id, page)
+    %{pdf | objects: objects, pages: pages}
   end
 
   @doc """
@@ -124,8 +127,8 @@ defmodule Typo.PDF.Page do
   """
   @spec select(PDF.t() | Page.t(), Types.page_number()) :: Page.t()
   def select(%PDF{} = pdf, page) when is_page_number(page) do
-    page = Map.get(pdf.pages, {:page, page}) || raise ArgumentError, "page #{page} doesn't exist"
-    %{page | pdf: pdf}
+    uuid = Map.get(pdf.pages, page) || raise ArgumentError, "page #{page} doesn't exist"
+    %{(%Page{type: :page} = Map.fetch!(pdf.objects, uuid)) | pdf: pdf}
   end
 
   def select(%Page{} = current, page) when is_page_number(page) do
