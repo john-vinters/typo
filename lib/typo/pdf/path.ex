@@ -29,6 +29,7 @@ defmodule Typo.PDF.Path do
   @k 4.0 * ((:math.sqrt(2) - 1.0) / 3.0)
 
   # appends operations onto the path stream.
+  @compile {:inline, append_stream: 2}
   @spec append_stream(Path.t(), term()) :: Path.t()
   defp append_stream(%Path{stream: s} = path, data), do: %{path | stream: [s, data]}
 

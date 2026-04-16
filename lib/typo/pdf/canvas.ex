@@ -23,6 +23,7 @@ defmodule Typo.PDF.Canvas do
   alias Typo.PDF.{Canvas, Page}
   alias Typo.Types
 
+  @compile {:inline, append_stream: 2}
   defp append_stream(%Page{stream: stream} = page, data), do: %{page | stream: [stream, data]}
 
   @doc """
