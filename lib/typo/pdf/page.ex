@@ -23,19 +23,22 @@ defmodule Typo.PDF.Page do
   alias Typo.PDF
   alias Typo.PDF.Page
   alias Typo.Types
+  alias Typo.Utils.UUID
 
   @type t :: %__MODULE__{
           pdf: nil | PDF.t(),
           type: :page | :xform,
+          uuid: UUID.t(),
           page: Types.page_number(),
           rotation: nil | Types.page_rotation(),
           size: nil | Types.page_size(),
           stream: iodata()
         }
 
-  @enforce_keys [:pdf, :page]
+  @enforce_keys [:pdf, :page, :uuid]
   defstruct pdf: nil,
             type: :page,
+            uuid: nil,
             page: nil,
             rotation: nil,
             size: nil,
@@ -46,6 +49,11 @@ defmodule Typo.PDF.Page do
   defp apply_orientation({w, h}, :landscape) when h > w, do: {h, w}
   defp apply_orientation({w, h}, :portrait) when w > h, do: {h, w}
   defp apply_orientation(size, _), do: size
+
+  # returns page type and uuid tuple.
+  @doc false
+  @spec get_id(Page.t()) :: {:page | :xform, UUID.t()}
+  def get_id(%Page{type: type, uuid: uuid}), do: {type, uuid}
 
   @doc """
   Creates a new page.
@@ -90,7 +98,7 @@ defmodule Typo.PDF.Page do
     !is_page_size(s) && raise ArgumentError, "invalid page size: #{inspect(s)}"
     size = apply_orientation(s, o)
     pdf = %{pdf | max_page: max_page}
-    %Page{pdf: pdf, page: p_num, rotation: r, size: size}
+    %Page{pdf: pdf, page: p_num, rotation: r, size: size, uuid: UUID.generate()}
   end
 
   def new(%Page{} = page, options) when is_list(options) do

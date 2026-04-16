@@ -1,9 +1,10 @@
 defmodule PathTest do
   use ExUnit.Case
   alias Typo.PDF.{Page, Path}
+  alias Typo.Utils.UUID
 
   defp ops(%Page{} = page), do: List.flatten(page.stream)
-  defp page, do: %Page{page: 1, pdf: nil}
+  defp page, do: %Page{page: 1, pdf: nil, uuid: UUID.generate()}
   defp path(path_func) when is_function(path_func), do: page() |> Path.new(path_func)
 
   test "bezier_c" do

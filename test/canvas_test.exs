@@ -1,9 +1,10 @@
 defmodule CanvasTest do
   use ExUnit.Case
   alias Typo.PDF.{Canvas, Page}
+  alias Typo.Utils.UUID
 
   defp ops(%Page{} = page), do: List.flatten(page.stream)
-  defp page, do: %Page{page: 1, pdf: nil}
+  defp page, do: %Page{page: 1, pdf: nil, uuid: UUID.generate()}
 
   test "set_fill_colour" do
     assert ops(Canvas.set_fill_colour(page(), 0.5)) == [{0.5, "g"}]
