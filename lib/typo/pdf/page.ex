@@ -55,6 +55,11 @@ defmodule Typo.PDF.Page do
   @spec get_id(Page.t()) :: {:page | :xform, UUID.t()}
   def get_id(%Page{type: type, uuid: uuid}), do: {type, uuid}
 
+  # returns the page uuid.
+  @doc false
+  @spec get_uuid(Page.t()) :: UUID.t()
+  def get_uuid(%Page{uuid: uuid}), do: uuid
+
   @doc """
   Creates a new page.
 
