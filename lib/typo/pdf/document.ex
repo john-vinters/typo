@@ -20,7 +20,9 @@ defmodule Typo.PDF.Document do
   """
 
   import Typo.Utils.Guards
+  alias Typo.Image.{JPEG, PNG}
   alias Typo.{PDF, Types}
+  alias Typo.Utils.IdMap
 
   @_metadata_fields %{
     author: :Author,
@@ -68,6 +70,26 @@ defmodule Typo.PDF.Document do
       {:utf16be, str} when is_binary(str) -> str
       {:literal, %DateTime{} = dt} -> dt
     end
+  end
+
+  @doc """
+  Loads an image from `filename` and assigns it the given `tag`.
+
+  Note that `tag` must not already be in use for any images.
+  """
+  @spec load_image!(PDF.t(), String.t(), Types.tag()) :: PDF.t()
+  def load_image!(%PDF{images: i} = pdf, filename, tag) when is_binary(filename) do
+    IdMap.has_tag?(i, tag) && raise ArgumentError, "image tag already in use: #{inspect(tag)}"
+    data = File.read!(filename)
+
+    image =
+      cond do
+        JPEG.jpeg?(data) -> JPEG.process!(data)
+        PNG.png?(data) -> PNG.process!(data)
+        true -> raise Typo.ImageError, "unsupported image type: #{inspect(filename)}"
+      end
+
+    %{pdf | images: IdMap.register(i, tag, image)}
   end
 
   @doc """
