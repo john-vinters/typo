@@ -20,11 +20,89 @@ defmodule Typo.PDF.Canvas do
   """
 
   import Typo.Utils.Guards
-  alias Typo.PDF.{Canvas, Page}
+  alias Typo.PDF.{Canvas, Page, Transform}
+  alias Typo.Protocol.Image
   alias Typo.Types
+  alias Typo.Utils.IdMap
 
   @compile {:inline, append_stream: 2}
   defp append_stream(%Page{stream: stream} = page, data), do: %{page | stream: [stream, data]}
+
+  @doc """
+  Places a previously loaded image (with `Typo.PDF.Document.load_image!/3`) with
+  `tag` onto the page at coordinate `p` with `options`:
+    * `:height` - image height.
+    * `:width` - image width.
+    * `:rotate` - anti-clockwise rotation in degrees (defaults to `0` if unspecified).
+
+  If only `height` or `width` is specified (but not both), the image aspect ratio
+  is preserved - if both are specified, then the aspect ratio may be overridden.
+
+  Coordinate `p` specifies the bottom left-hand corner of the image (before any
+  rotation takes place).
+  """
+  @spec image(Page.t(), Types.tag(), Types.xy(), Types.image_options()) :: Page.t()
+  def image(%Page{pdf: %{images: images}} = page, tag, p, options \\ [])
+      when is_xy(p) and is_list(options) do
+    !IdMap.has_tag?(images, tag) && raise ArgumentError, "image tag not found: #{inspect(tag)}"
+    w = Keyword.get(options, :width)
+    w && !is_number(w) && raise ArgumentError, "invalid image width: #{inspect(w)}"
+    h = Keyword.get(options, :height)
+    h && !is_number(h) && raise ArgumentError, "invalid image height: #{inspect(h)}"
+    rotate = Keyword.get(options, :rotate, 0)
+    !is_number(rotate) && raise ArgumentError, "invalid image rotation: #{inspect(rotate)}"
+    image_place(page, tag, p, w, h, rotate)
+  end
+
+  # does main work of placing an image once everything has been validated.
+  @spec image_place(Page.t(), Types.tag(), Types.xy(), nil | number(), nil | number(), number()) ::
+          Page.t()
+  defp image_place(%Page{pdf: %{images: images}} = page, tag, {x, y}, width, height, rotate) do
+    image = IdMap.fetch!(images, tag)
+    image_id = IdMap.fetch_item_id!(images, tag)
+    images = IdMap.mark_object_use(images, Page.get_uuid(page), tag)
+    {w, h} = Image.size(image)
+    {sw, sh} = image_scale(w, h, width, height)
+
+    put_in(page.pdf, images)
+    |> with_state(fn page ->
+      page
+      |> transform(Transform.translate(x, y))
+      |> image_rotate(rotate, sw, sh)
+      |> transform(Transform.scale(sw, sh))
+      |> append_stream({"/Im#{image_id}", "Do"})
+    end)
+  end
+
+  # rotates image `angle` degrees about centre anti-clockwise.
+  @spec image_rotate(Page.t(), number(), number(), number()) :: Page.t()
+  defp image_rotate(%Page{} = page, 0, _, _), do: page
+
+  defp image_rotate(%Page{} = page, angle, sw, sh) do
+    sw2 = sw / 2
+    sh2 = sh / 2
+
+    page
+    |> transform(Transform.translate(sw2, sh2))
+    |> transform(Transform.rotate(angle))
+    |> transform(Transform.translate(-sw2, -sh2))
+  end
+
+  # scales image dimensions.
+  @spec image_scale(number(), number(), nil | number(), nil | number()) :: {number(), number()}
+  defp image_scale(iw, ih, nil, nil), do: {iw, ih}
+
+  defp image_scale(iw, ih, dw, nil) when is_number(dw) do
+    sf = dw / iw
+    {iw * sf, ih * sf}
+  end
+
+  defp image_scale(iw, ih, nil, dh) when is_number(dh) do
+    sf = dh / ih
+    {iw * sf, ih * sf}
+  end
+
+  defp image_scale(_iw, _ih, dw, dh) when is_number(dw) and is_number(dh), do: {dw, dh}
 
   @doc """
   Sets the fill colour to `color`.

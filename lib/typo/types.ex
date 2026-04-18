@@ -24,6 +24,7 @@ defmodule Typo.Types do
   @type colour_greyscale :: number()
   @type colour_rgb :: {number(), number(), number()}
   @type compression :: :none | 0..9
+  @type image_options :: [{:height | :rotate | :width, number()}]
   @type line_cap :: :butt | :round | :square
   @type line_join :: :bevel | :miter | :mitre | :round
   @type metadata_field ::
