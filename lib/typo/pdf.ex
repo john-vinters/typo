@@ -33,7 +33,7 @@ defmodule Typo.PDF do
             optional(Types.metadata_field()) => {:utf8, String.t()} | {:literal, DateTime.t()}
           },
           objects: %{optional(UUID.t()) => Page.t()},
-          pages: %{optional(Types.page_number()) => UUID.t()}
+          pages: %{optional({:page | :xform, Types.page_number()}) => UUID.t()}
         }
 
   defstruct assigns: %{},

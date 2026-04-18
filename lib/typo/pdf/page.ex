@@ -116,11 +116,10 @@ defmodule Typo.PDF.Page do
   Saves the current page, returning the updated `PDF` struct.
   """
   @spec save(Page.t()) :: PDF.t()
-  def save(%Page{pdf: %PDF{} = pdf, type: :page, stream: stream} = page) do
+  def save(%Page{pdf: %PDF{} = pdf, type: :page, stream: stream, uuid: uuid} = page) do
     page = %{page | pdf: nil, stream: List.flatten(stream)}
-    id = Page.get_id(page)
-    pages = Map.put(pdf.pages, page.page, id)
-    objects = Map.put(pdf.objects, id, page)
+    pages = Map.put(pdf.pages, {:page, page.page}, uuid)
+    objects = Map.put(pdf.objects, uuid, page)
     %{pdf | objects: objects, pages: pages}
   end
 
@@ -132,8 +131,8 @@ defmodule Typo.PDF.Page do
   """
   @spec select(PDF.t() | Page.t(), Types.page_number()) :: Page.t()
   def select(%PDF{} = pdf, page) when is_page_number(page) do
-    uuid = Map.get(pdf.pages, page) || raise ArgumentError, "page #{page} doesn't exist"
-    %{(%Page{type: :page} = Map.fetch!(pdf.objects, uuid)) | pdf: pdf}
+    uuid = Map.get(pdf.pages, {:page, page}) || raise ArgumentError, "page #{page} doesn't exist"
+    %{Map.fetch!(pdf.objects, uuid) | pdf: pdf}
   end
 
   def select(%Page{} = current, page) when is_page_number(page) do
