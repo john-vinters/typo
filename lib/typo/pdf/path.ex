@@ -169,10 +169,29 @@ defmodule Typo.PDF.Path do
   end
 
   @doc """
-  Draws a rectangle with bottom-left coordinates `p`, `width` and `height`.
+  Draws a (possibly rounded) rectangle with bottom-left coordinates `p`, `width`
+  `height` and optional corner `radius` (which defaults to 0).
   """
-  @spec rectangle(Path.t(), Types.xy(), number(), number()) :: Path.t()
-  def rectangle(%Path{} = path, p, width, height)
+  @spec rectangle(Path.t(), Types.xy(), number(), number(), number()) :: Path.t()
+  def rectangle(_path, _p, _width, _height, radius \\ 0)
+
+  def rectangle(%Path{} = path, p, width, height, 0)
       when is_xy(p) and is_number(width) and is_number(height),
       do: append_stream(path, {p, width, height, "re"})
+
+  def rectangle(%Path{} = path, {x, y} = p, w, h, r)
+      when is_xy(p) and is_number(w) and is_number(h) and is_number(r) and r > 0 do
+    rk = r * @k
+
+    path
+    |> move_to({x + r, y})
+    |> line_to({x + w - r, y})
+    |> bezier_c({x + w - r + rk, y}, {x + w, y + rk}, {x + w, y + r})
+    |> line_to({x + w, y + h - r})
+    |> bezier_c({x + w, y + h - rk}, {x + w - r + rk, y + h}, {x + w - r, y + h})
+    |> line_to({x + r, y + h})
+    |> bezier_c({x + rk, y + h}, {x, y + h - r + rk}, {x, y + h - r})
+    |> line_to({x, y + r})
+    |> bezier_c({x, y + rk}, {x + rk, y}, {x + r, y})
+  end
 end
