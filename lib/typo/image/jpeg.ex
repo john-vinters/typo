@@ -94,6 +94,20 @@ defmodule Typo.Image.JPEG do
   defp skip_segment(<<length::16, _skip::binary-size(length - 2), rest::binary>>), do: rest
   defp skip_segment(_), do: <<>>
 
+  defimpl Typo.Protocol.Image, for: JPEG do
+    @spec has_alpha?(JPEG.t()) :: false
+    def has_alpha?(%JPEG{}), do: false
+
+    @spec height(JPEG.t()) :: non_neg_integer()
+    def height(%JPEG{height: h}), do: h
+
+    @spec size(JPEG.t()) :: {non_neg_integer(), non_neg_integer()}
+    def size(%JPEG{height: h, width: w}), do: {w, h}
+
+    @spec width(JPEG.t()) :: non_neg_integer()
+    def width(%JPEG{width: w}), do: w
+  end
+
   defimpl Typo.Protocol.Object, for: JPEG do
     @spec to_iodata(JPEG.t(), Keyword.t()) :: iodata()
     def to_iodata(this, options) do

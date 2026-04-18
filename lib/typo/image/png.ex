@@ -215,7 +215,21 @@ defmodule Typo.Image.PNG do
   defp to_colour_space(t),
     do: raise(Typo.ImageError, "Unsupported PNG image: (colour type: #{inspect(t)})")
 
-  defimpl Typo.Protocol.Object, for: Typo.Image.PNG do
+  defimpl Typo.Protocol.Image, for: PNG do
+    @spec has_alpha?(PNG.t()) :: boolean()
+    def has_alpha?(%PNG{has_alpha: a}), do: a
+
+    @spec height(PNG.t()) :: non_neg_integer()
+    def height(%PNG{height: h}), do: h
+
+    @spec size(PNG.t()) :: {non_neg_integer(), non_neg_integer()}
+    def size(%PNG{height: h, width: w}), do: {w, h}
+
+    @spec width(PNG.t()) :: non_neg_integer()
+    def width(%PNG{width: w}), do: w
+  end
+
+  defimpl Typo.Protocol.Object, for: PNG do
     alias Typo.Protocol.Object
 
     @spec alpha_iodata(PNG.t(), Keyword.t()) :: iodata()
