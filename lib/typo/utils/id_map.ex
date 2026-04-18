@@ -32,7 +32,7 @@ defmodule Typo.Utils.IdMap do
   defstruct id: 1, tag_to_id: %{}, items: %{}, object_use: %{}
 
   @doc """
-  Fetches an item by `id`, or raises `KeyError` if not found.
+  Fetches an item by `tag`, or raises `KeyError` if not found.
   """
   @spec fetch!(IdMap.t(), Types.tag()) :: any()
   def fetch!(%IdMap{items: i, tag_to_id: t}, tag), do: Map.fetch!(i, Map.fetch!(t, tag))
