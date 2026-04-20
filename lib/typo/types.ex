@@ -24,6 +24,7 @@ defmodule Typo.Types do
   @type colour_greyscale :: number()
   @type colour_rgb :: {number(), number(), number()}
   @type compression :: :none | 0..9
+  @type file_offset :: non_neg_integer()
   @type image_options :: [{:height | :rotate | :width, number()}]
   @type line_cap :: :butt | :round | :square
   @type line_join :: :bevel | :miter | :mitre | :round
@@ -36,6 +37,7 @@ defmodule Typo.Types do
           | :producer
           | :subject
           | :title
+  @type oid :: {:oid, non_neg_integer(), non_neg_integer()}
   @type page_number :: integer()
   @type page_orientation :: :landscape | :portrait
   @type page_rotation :: 0 | 90 | 180 | 270
