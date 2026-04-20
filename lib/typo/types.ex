@@ -48,6 +48,6 @@ defmodule Typo.Types do
         ]
   @type tag :: Map.key()
   @type transform_matrix :: {number(), number(), number(), number(), number(), number()}
-  @type winding_rule :: {:even_odd, :nonzero}
+  @type winding_rule :: :even_odd | :nonzero
   @type xy :: {number(), number()}
 end
