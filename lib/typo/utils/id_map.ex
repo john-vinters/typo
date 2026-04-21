@@ -52,6 +52,18 @@ defmodule Typo.Utils.IdMap do
   def fetch_item_id!(%IdMap{tag_to_id: t}, tag), do: Map.fetch!(t, tag)
 
   @doc """
+  Returns the list of item internal_ids used in a document.
+  """
+  @spec get_object_use(IdMap.t()) :: [internal_id()]
+  def get_object_use(%IdMap{object_use: o}) do
+    Map.values(o)
+    |> Enum.map(&MapSet.to_list(&1))
+    |> List.flatten()
+    |> Enum.uniq()
+    |> Enum.sort()
+  end
+
+  @doc """
   Returns the list of item internal_ids used by a particular `object_id`.
   """
   @spec get_object_use(IdMap.t(), UUID.t()) :: [internal_id()]
