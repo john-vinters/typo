@@ -55,7 +55,7 @@ defmodule Typo.Render.Context do
     {chunk_list, chunk_map} =
       Enum.reduce(page_list, {[], %{}}, fn page, {chunks, map} ->
         chunk_id = ceil(page / chunk_size)
-        [cur_chunk, _] = chunks
+        cur_chunk = List.first(chunks)
         chunks = if chunk_id != cur_chunk, do: [chunk_id | chunks], else: chunks
         {chunks, Map.put(map, page, chunk_id)}
       end)
@@ -168,7 +168,7 @@ defmodule Typo.Render.Context do
     pre_oid = Map.get(oid_map, tag, oid)
     ofs_map = Map.put(ofs_map, pre_oid, ofs)
     oid_map = if pre_oid != oid, do: oid_map, else: Map.put(oid_map, tag, oid)
-    new_oid = if pre_oid != oid, do: oid, else: {oid, elem(oid, 1) + 1, 0}
+    new_oid = if pre_oid != oid, do: oid, else: {:oid, elem(oid, 1) + 1, 0}
     new_ctx = %{ctx | oid: new_oid, ofs_map: ofs_map, oid_map: oid_map}
     obj_bin = ["#{elem(pre_oid, 1)} 0 obj\n", data, "\nendobj\n\n"] |> IO.iodata_to_binary()
     append(new_ctx, obj_bin)
