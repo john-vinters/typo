@@ -80,6 +80,9 @@ end
 
 defimpl Typo.Protocol.Object, for: Tuple do
   alias Typo.Protocol.Object
+  alias Typo.Utils.Format
+
+  def to_iodata({:literal, %DateTime{} = dt}, _options), do: Format.literal_date_time(dt)
 
   def to_iodata({:oid, id, version}, _options), do: "#{id} #{version} R"
 
